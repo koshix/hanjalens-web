@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Hanja Lens</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <main class="wrap">
+    <header>
+      <h1>Hanja Lens</h1>
+      <p>韓国語の漢字語を、日本語新字体で可視化します。</p>
+    </header>
+
+    <section class="stats-bar" aria-label="収録データ統計">
+      <span class="stat-chip"><span class="stat-label">例文</span><strong id="statExamples">—</strong></span>
+      <span class="stat-chip"><span class="stat-label">漢字語</span><strong id="statHanja">—</strong></span>
+      <span class="stat-chip"><span class="stat-label">外来語</span><strong id="statLoanwords">—</strong></span>
+      <span class="stat-chip"><span class="stat-label">保護語</span><strong id="statProtected">—</strong></span>
+      <span class="stat-chip"><span class="stat-label">句</span><strong id="statPhrases">—</strong></span>
+      <span class="stat-chip"><span class="stat-label">混成語</span><strong id="statMixed">—</strong></span>
+    </section>
+    <div class="mit-status-row dictionary-status-row">
+      <span id="mitDictionaryStatus" class="mit-status" aria-live="polite">MIT辞書 準備中</span>
+      <span id="ccDictionaryStatus" class="mit-status" aria-live="polite">補助辞書 準備中</span>
+      <span id="stdictStatus" class="mit-status" aria-live="polite">標準辞書 準備中</span>
+    </div>
+
+    <section class="panel input-panel">
+      <label for="inputText">韓国語入力</label>
+      <textarea id="inputText" rows="4" placeholder="예: 한국의 경제 발전은 사회 구조를 크게 변화시켰다."></textarea>
+      <details class="example-box">
+        <summary>例文から試す</summary>
+        <div class="example-controls">
+          <label class="sr-only" for="exampleSelect">例文</label>
+          <select id="exampleSelect" aria-label="例文を選択"></select>
+          <div class="example-buttons">
+            <button id="insertExampleBtn" type="button">例文を入れる</button>
+            <button id="randomExampleBtn" type="button">ランダム</button>
+          </div>
+        </div>
+      </details>
+      <button id="convertBtn" class="primary" type="button">変換</button>
+    </section>
+
+    <section class="panel result-panel">
+      <div class="result-head">
+        <div>
+          <h2>変換結果</h2>
+          <p class="result-guide">上から 原文 ／ 漢字・カタカナ交じり ／ ローマ字</p>
+        </div>
+        <button id="copyAllBtn" class="copy" type="button">コピー</button>
+      </div>
+      <div id="resultOut" class="result-output" aria-live="polite"></div>
+      <section id="lensDetail" class="lens-detail" hidden aria-live="polite" aria-label="語の説明">
+        <div class="lens-detail-head">
+          <strong>Interactive Lens</strong>
+          <button id="lensDetailClose" class="lens-close" type="button" aria-label="説明を閉じる">閉じる</button>
+        </div>
+        <dl class="lens-fields">
+          <div><dt>ハングル</dt><dd id="lensHangul">—</dd></div>
+          <div><dt>表示</dt><dd id="lensDisplay">—</dd></div>
+          <div><dt>種類</dt><dd id="lensType">—</dd></div>
+          <div><dt>出自</dt><dd id="lensSource">—</dd></div>
+          <div><dt>辞書候補</dt><dd id="lensCandidate">—</dd></div>
+          <div><dt>経路</dt><dd id="lensRoute">—</dd></div>
+        </dl>
+        <p id="lensReason" class="lens-reason"></p>
+      </section>
+      <details id="translationBox" class="translation-box" hidden>
+        <summary>日本語訳を表示</summary>
+        <div id="translationOut" class="translation-output" lang="ja"></div>
+        <p id="translationNote" class="translation-note"></p>
+      </details>
+    </section>
+
+    <footer>
+      <small><span id="appVersion"></span> — 誤変換より未変換を優先 ・ <a href="credits.html">出典・ライセンス</a></small>
+    </footer>
+  </main>
+  <script src="src/version.js"></script>
+  <script src="data/generated-data.js"></script>
+  <script src="data/generated-examples.js"></script>
+  <script src="src/engine-rules.js"></script>
+  <script src="src/romanizer.js"></script>
+  <script src="src/dictionary-registry.js"></script>
+  <script src="data/morphology-veto-oracle.js"></script>
+  <script src="src/morphology-veto.js"></script>
+  <script src="src/engine.js"></script>
+  <script src="src/translation-provider.js"></script>
+  <script src="src/external-sources.js"></script>
+  <script src="src/runtime-dictionary-utils.js"></script>
+  <script src="src/mit-dictionary-loader.js"></script>
+  <script src="src/cc-kedict-parser.js"></script>
+  <script src="src/cc-kedict-loader.js"></script>
+  <script src="src/stdict-loader.js"></script>
+  <script src="src/interactive-lens.js"></script>
+  <script src="src/app-view.js"></script>
+  <script src="src/app.js"></script>
+</body>
+</html>

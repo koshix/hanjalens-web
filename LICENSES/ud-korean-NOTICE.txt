@@ -1,0 +1,12 @@
+Universal Dependencies Korean treebanks used by the morphology-veto exploration (research tooling only).
+
+- UD_Korean-GSD (revision 7628157f2ba54e0580b2c03e22f1a9f5b111d7e7): CC BY-SA 4.0
+  https://github.com/UniversalDependencies/UD_Korean-GSD
+- UD_Korean-Kaist (revision 5e2cfb9a30a71e2091b6905f8f79bc2e6d4b6b28): CC BY-SA 4.0
+  https://github.com/UniversalDependencies/UD_Korean-Kaist
+- UD_Korean-PUD (revision 28b6ab7e82c25844e250131a0d3c486fbb1a8790): CC BY-SA 3.0
+  https://github.com/UniversalDependencies/UD_Korean-PUD
+
+The repository stores only short context snippets from UD_Korean-GSD in
+data/mveto-gsd-flagged-sample100-adjudication.tsv (CC BY-SA 4.0, attribution as above).
+Full corpus text is fetched at run time and is not committed.

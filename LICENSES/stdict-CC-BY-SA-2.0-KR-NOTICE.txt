@@ -1,0 +1,8 @@
+Standard Korean Language Dictionary data
+Source: National Institute of Korean Language (국립국어원), 표준국어대사전
+Runtime normalized TSV source: https://github.com/dahlia/gukhanmun
+Snapshot noted by Gukhanmun: 2026-06-06
+License: Creative Commons Attribution-ShareAlike 2.0 Korea (CC BY-SA 2.0 KR).
+https://creativecommons.org/licenses/by-sa/2.0/kr/
+
+Hanja Lens uses the dictionary data layer and does not incorporate the Gukhanmun GPL engine code.

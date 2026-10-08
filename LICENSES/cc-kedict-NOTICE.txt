@@ -1,0 +1,11 @@
+cc-kedict: Creative Commons Korean-English Dictionary
+Source: https://github.com/mhagiwara/cc-kedict
+License: Creative Commons Attribution-ShareAlike 3.0 (CC BY-SA 3.0)
+License URL: https://creativecommons.org/licenses/by-sa/3.0/
+
+Hanja Lens v1.8 does not bundle the full cc-kedict database. At runtime it may fetch
+kedict.yml from the upstream repository, extract entries that contain one unambiguous
+Hanja spelling, normalize those Hanja to Japanese shinjitai, and cache the resulting
+mapping locally in the user's browser.
+
+Attribution: cc-kedict project / Masato Hagiwara and contributors.
