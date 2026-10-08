@@ -1,6 +1,6 @@
 // GENERATED FILE. Edit data/*.tsv and run: node scripts/build-data.mjs
 (function(root,factory){const d=factory();if(typeof module!=="undefined"&&module.exports)module.exports=d;root.HanjaLensData=d;})(typeof globalThis!=="undefined"?globalThis:this,function(){return {
-  "version": "4.1",
+  "version": "4.2",
   "hanja": {
     "가격": "価格",
     "가공식품": "加工食品",
@@ -1174,7 +1174,24 @@
     "입국": "入国",
     "입학": "入学",
     "독거노인": "独居老人",
-    "문제시": "問題視"
+    "문제시": "問題視",
+    "폭발": "爆発",
+    "폭발적": "爆発的",
+    "상시": "常時",
+    "상시화": "常時化",
+    "동기간": "同期間",
+    "고려시대": "高麗時代",
+    "화력발전": "火力発電",
+    "문화체육관광부": "文化体育観光部",
+    "초과세수": "超過税収",
+    "세제개편": "税制改編",
+    "선물시장": "先物市場",
+    "선물가격": "先物価格",
+    "발효식품": "発酵食品",
+    "전수조사": "全数調査",
+    "방문객": "訪問客",
+    "방문자": "訪問者",
+    "방문단": "訪問団"
   },
   "hanjaMeta": {
     "가격": {
@@ -9408,6 +9425,125 @@
       "confidence": "high",
       "display": "yes",
       "notes": "v3.8 batch 9; reviewed low-ambiguity exact lexeme"
+    },
+    "폭발": {
+      "surface": "폭발",
+      "ja": "爆発",
+      "confidence": "high",
+      "display": "yes",
+      "notes": "v4.2 reviewed dominant reading (runtime layers picked 暴発)"
+    },
+    "폭발적": {
+      "surface": "폭발적",
+      "ja": "爆発的",
+      "confidence": "high",
+      "display": "yes",
+      "notes": "v4.2 reviewed dominant reading"
+    },
+    "상시": {
+      "surface": "상시",
+      "ja": "常時",
+      "confidence": "high",
+      "display": "yes",
+      "notes": "v4.2 reviewed low-ambiguity lexeme"
+    },
+    "상시화": {
+      "surface": "상시화",
+      "ja": "常時化",
+      "confidence": "high",
+      "display": "yes",
+      "notes": "v4.2 reviewed low-ambiguity lexeme (runtime composed 桑柴火)"
+    },
+    "동기간": {
+      "surface": "동기간",
+      "ja": "同期間",
+      "confidence": "high",
+      "display": "yes",
+      "notes": "v4.2 reviewed exact compound"
+    },
+    "고려시대": {
+      "surface": "고려시대",
+      "ja": "高麗時代",
+      "confidence": "high",
+      "display": "yes",
+      "notes": "v4.2 reviewed exact compound (고려 core = 考慮)"
+    },
+    "화력발전": {
+      "surface": "화력발전",
+      "ja": "火力発電",
+      "confidence": "high",
+      "display": "yes",
+      "notes": "v4.2 reviewed exact compound"
+    },
+    "문화체육관광부": {
+      "surface": "문화체육관광부",
+      "ja": "文化体育観光部",
+      "confidence": "high",
+      "display": "yes",
+      "notes": "v4.2 reviewed government ministry name"
+    },
+    "초과세수": {
+      "surface": "초과세수",
+      "ja": "超過税収",
+      "confidence": "high",
+      "display": "yes",
+      "notes": "v4.2 reviewed exact compound (세수 protected)"
+    },
+    "세제개편": {
+      "surface": "세제개편",
+      "ja": "税制改編",
+      "confidence": "high",
+      "display": "yes",
+      "notes": "v4.2 reviewed exact compound (세제 protected)"
+    },
+    "선물시장": {
+      "surface": "선물시장",
+      "ja": "先物市場",
+      "confidence": "high",
+      "display": "yes",
+      "notes": "v4.2 reviewed exact compound (선물 protected)"
+    },
+    "선물가격": {
+      "surface": "선물가격",
+      "ja": "先物価格",
+      "confidence": "high",
+      "display": "yes",
+      "notes": "v4.2 reviewed exact compound (선물 protected)"
+    },
+    "발효식품": {
+      "surface": "발효식품",
+      "ja": "発酵食品",
+      "confidence": "high",
+      "display": "yes",
+      "notes": "v4.2 reviewed exact compound"
+    },
+    "전수조사": {
+      "surface": "전수조사",
+      "ja": "全数調査",
+      "confidence": "high",
+      "display": "yes",
+      "notes": "v4.2 reviewed exact compound (전수 core = 伝授)"
+    },
+    "방문객": {
+      "surface": "방문객",
+      "ja": "訪問客",
+      "confidence": "high",
+      "display": "yes",
+      "notes": "v4.2 reviewed exact compound (방문 protected)"
+    },
+    "방문자": {
+      "surface": "방문자",
+      "ja": "訪問者",
+      "confidence": "high",
+      "display": "yes",
+      "notes": "v4.2 reviewed exact compound (방문 protected)"
+    },
+    "방문단": {
+      "surface": "방문단",
+      "ja": "訪問団",
+      "confidence": "high",
+      "display": "yes",
+      "notes": "v4.2 reviewed exact compound (방문 protected)"
     }
   },
   "loanwords": {
@@ -10232,7 +10368,24 @@
     "선블록": "サンブロック",
     "캘린더": "カレンダー",
     "비자": "ビザ",
-    "포털": "ポータル"
+    "포털": "ポータル",
+    "필로폰": "フィロポン",
+    "메가와트": "メガワット",
+    "팩트시트": "ファクトシート",
+    "애프터마켓": "アフターマーケット",
+    "포지션": "ポジション",
+    "트랜스포터": "トランスポーター",
+    "엄빌리칼": "アンビリカル",
+    "윈도우": "ウィンドウ",
+    "플래너": "プランナー",
+    "워커": "ワーカー",
+    "봇": "ボット",
+    "사이트": "サイト",
+    "컨소시엄": "コンソーシアム",
+    "사무라이": "サムライ",
+    "인프라": "インフラ",
+    "랜드마크": "ランドマーク",
+    "멀티": "マルチ"
   },
   "protected": {
     "가을": "native/grammar protection",
@@ -10311,7 +10464,16 @@
     "전자": "ambiguous: 前者 vs 電子; Fresh corpus v2 context-only",
     "조회": "ambiguous: 朝会 vs 照会; Fresh corpus v2 context-only",
     "접수": "ambiguous: 接受 (receipt/acceptance) vs 接收 (seizure/takeover); Fresh corpus v2 context-only",
-    "배치": "ambiguous: batch loanword vs 配置; hold without context"
+    "배치": "ambiguous: batch loanword vs 配置; hold without context",
+    "대비": "v4.2 ambiguous: 対比 (comparison) vs 対備 (preparation); context-only",
+    "세수": "v4.2 ambiguous: 税収 vs 洗手; context-only",
+    "세제": "v4.2 ambiguous: 税制 vs 洗剤; context-only",
+    "선물": "v4.2 ambiguous: 膳物 (gift) vs 先物 (futures); context-only",
+    "방문": "v4.2 ambiguous: 訪問 vs 房門; context-only (runtime layers picked 房門)",
+    "증세": "v4.2 ambiguous: 増税 vs 症勢; hold",
+    "다우": "v4.2 proper name (Dow) vs 多雨; hold",
+    "신한": "v4.2 proper name (Shinhan) vs 宸翰; hold",
+    "번의": "v4.2 grammar: 번(counter)+의; 翻意 only became unambiguous through glyph merging"
   },
   "phrases": [
     [
@@ -10857,12 +11019,66 @@
     "閱": "閲",
     "脫": "脱",
     "橫": "横",
-    "强": "強"
+    "强": "強",
+    "舊": "旧",
+    "繪": "絵",
+    "覺": "覚",
+    "擴": "拡",
+    "嶽": "岳",
+    "歡": "歓",
+    "僞": "偽",
+    "犧": "犠",
+    "曉": "暁",
+    "薰": "薫",
+    "黃": "黄",
+    "棧": "桟",
+    "獎": "奨",
+    "稱": "称",
+    "壤": "壌",
+    "淨": "浄",
+    "晉": "晋",
+    "錢": "銭",
+    "總": "総",
+    "藏": "蔵",
+    "鬭": "闘",
+    "繩": "縄",
+    "甁": "瓶",
+    "飜": "翻",
+    "隸": "隷",
+    "虛": "虚",
+    "劃": "画",
+    "痲": "麻"
   },
+  "jaForms": [
+    [
+      "労動",
+      "労働"
+    ],
+    [
+      "刺戟",
+      "刺激"
+    ],
+    [
+      "反撥",
+      "反発"
+    ],
+    [
+      "陶瓷",
+      "陶磁"
+    ],
+    [
+      "週期",
+      "周期"
+    ],
+    [
+      "各別",
+      "格別"
+    ]
+  ],
   "stats": {
-    "hanja": 1173,
-    "loanwords": 822,
-    "protected": 77,
+    "hanja": 1190,
+    "loanwords": 839,
+    "protected": 86,
     "phrases": 3,
     "mixed": 8
   }

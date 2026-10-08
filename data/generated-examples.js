@@ -1,6 +1,6 @@
 // GENERATED FILE. Edit data/examples.tsv and run: node scripts/build-examples.mjs
 (function(root,factory){const d=factory();if(typeof module!=="undefined"&&module.exports)module.exports=d;root.HanjaLensExamples=d;})(typeof globalThis!=="undefined"?globalThis:this,function(){return {
-  "version": "4.1",
+  "version": "4.2",
   "examples": [
     {
       "id": "ex001",
@@ -804,7 +804,7 @@
       "id": "ex115",
       "category": "realtext-general-v2",
       "input": "본 안내문은 주민등록법 제10조에 의거하여 작성되었습니다.",
-      "expected": "본 案内文은 住民登録法 제10조에 依拠하여 作成되었습니다.",
+      "expected": "본 案内文은 住民登録法 第10条에 依拠하여 作成되었습니다.",
       "translation": "本案内文は住民登録法第10条に基づいて作成されました。"
     },
     {
@@ -2393,7 +2393,7 @@
       "id": "ex342",
       "category": "population-generational-change-new-topics-v1",
       "input": "노동 인구의 감소는 장기적으로 경제 성장률에 부정적 영향을 줄 수 있다.",
-      "expected": "労動：労働 人口의 減少는 長期的으로 経済 成長率에 否定的 影響을 줄 수 있다.",
+      "expected": "労働 人口의 減少는 長期的으로 経済 成長率에 否定的 影響을 줄 수 있다.",
       "translation": "労働人口の減少は、長期的に経済成長率に否定的な影響を与えかねない。"
     },
     {
@@ -2414,7 +2414,7 @@
       "id": "ex345",
       "category": "population-generational-change-new-topics-v1",
       "input": "이민 정책은 노동력 부족 문제를 완화하는 수단으로 논의되기도 한다.",
-      "expected": "移民 政策은 労動力：労働力 不足 問題를 緩和하는 手段으로 論議되기도 한다.",
+      "expected": "移民 政策은 労働力 不足 問題를 緩和하는 手段으로 論議되기도 한다.",
       "translation": "移民政策は、労働力不足問題を緩和する手段として議論されることもある。"
     },
     {

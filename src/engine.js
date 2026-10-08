@@ -70,9 +70,14 @@
   ].sort((a,b)=>b.length-a.length);
 
   function normalize(text){ return String(text??'').normalize('NFC'); }
+  // v4.2: after the per-character shinjitai map, Korean-specific word forms whose Japanese standard form uses
+  // other characters (data/ja-form-map.tsv, e.g. 労動→労働) are rewritten as whole sequences.
+  const JA_FORMS=DATA.jaForms||[];
   function normalizeJapaneseGlyphs(text){
     const map=DATA.shinjitai||{};
-    return [...String(text??'')].map(ch=>map[ch]||ch).join('');
+    let out=[...String(text??'')].map(ch=>map[ch]||ch).join('');
+    for(const [from,to] of JA_FORMS) if(out.includes(from)) out=out.replaceAll(from,to);
+    return out;
   }
   function hasNoFinalConsonantHangul(s){
     if(!s) return false;
@@ -102,7 +107,8 @@
 
     const hint=getLexicalHint(surface);
     if(hint){
-      const output=hint.hanja+'：'+hint.jpHint;
+      // v4.2: when glyph/word-form normalization makes both sides identical (労動→労働), show one form.
+      const output=hint.hanja===hint.jpHint?hint.hanja:hint.hanja+'：'+hint.jpHint;
       traceEvent('lexical-hint',{surface,output});
       return output;
     }
@@ -522,6 +528,35 @@
   }
 
 
+  // v4.2 composition guard. A composed surface must not end in a runtime-dictionary component that has
+  // swallowed a particle: a two-syllable component whose last syllable is a particle syllable and whose first
+  // syllable is either a particle (과의, 와의) or a one-syllable noun suffix (실로, 관은, 관이). Such components
+  // are obscure homographs (果毅, 失路, 官銀, 貫耳); the composition is refused so the eojeol stays in Hangul or
+  // is handled by particle stripping.
+  const COMPOSE_TAIL_PARTICLE_SYLLABLES=new Set(['은','는','이','가','을','를','의','에','와','과','도','로']);
+  const COMPOSE_TAIL_NOUN_SUFFIXES=new Set(['관','실','원','국','처','청','소','단','층','동','권','장','과']);
+  // v4.2: partial composition must not end with an unknown tail of one syllable + particle when that syllable
+  // continues the preceding runtime component into another dictionary word (法務+部長+관은, where 장관 is the
+  // real word). Particle/copula tails (로는, 과는, 라는) and plural 들 are ordinary.
+  const COPULA_TAILS=new Set([...COPULA_SUFFIXES,...CONTRACTED_COPULA_SUFFIXES,'라는','라도','라고','라면']);
+  function unknownNounParticleTail(parts){
+    const tail=parts[parts.length-1], prev=parts[parts.length-2];
+    if(!tail || tail.type!=='unknown' || !prev || prev.type!=='runtime') return false;
+    const syl=[...tail.surface];
+    if(syl.length!==2 || !COMPOSE_TAIL_PARTICLE_SYLLABLES.has(syl[1])) return false;
+    if(syl[0]==='들' || COMPOSE_TAIL_PARTICLE_SYLLABLES.has(syl[0]) || PARTICLE_RUNS_ALL.has(tail.surface) || COPULA_TAILS.has(tail.surface)) return false;
+    const bridge=[...prev.surface].slice(-1)[0]+syl[0];
+    return Boolean(getHanjaEntry(bridge));
+  }
+  const PARTICLE_RUNS_ALL=new Set(PARTICLES);
+  function swallowsParticleTail(parts){
+    const last=parts[parts.length-1];
+    if(!last || last.type!=='runtime') return false;
+    const syl=[...last.surface];
+    if(syl.length!==2 || !COMPOSE_TAIL_PARTICLE_SYLLABLES.has(syl[1])) return false;
+    return COMPOSE_TAIL_PARTICLE_SYLLABLES.has(syl[0]) || COMPOSE_TAIL_NOUN_SUFFIXES.has(syl[0]);
+  }
+
   // v3.5 generic composition.
   //
   // This is deliberately below exact lexical layers and reviewed compounds.
@@ -643,6 +678,12 @@
         );
         if(outputs.size>1) return surface;
       }
+    }
+
+    // v4.2 guard: refuse (never promote a lower-ranked segmentation).
+    if(swallowsParticleTail(best.parts)){
+      traceEvent('composition-guard',{surface,stage:'generic'});
+      return surface;
     }
 
     const output=best.parts.map(x=>x.output).join('');
@@ -993,6 +1034,12 @@
       }
     }
 
+    // v4.2 guards refuse the chosen segmentation; they never promote a lower-ranked one.
+    if(swallowsParticleTail(best.parts) || unknownNounParticleTail(best.parts)){
+      traceEvent('composition-guard',{surface,stage:'partial'});
+      return surface;
+    }
+
     const output=best.parts.map(x=>x.output).join('');
     traceEvent('partial-composition',{
       surface,
@@ -1146,7 +1193,19 @@
     return null;
   }
 
+  // v4.2: a Hangul run that is only a particle and follows non-Hangul text inside the eojeol (e.g. the 와의 in
+  // 라이너(Liner)와의) is grammar, never a word.
+  const PARTICLE_RUNS=new Set(PARTICLES);
   function convertHangulRun(run,context=null){
+    if(context && context.start>0 && PARTICLE_RUNS.has(run)){
+      traceEvent('particle-run-guard',{surface:run});
+      return run;
+    }
+    // v4.2: right after a converted magnitude (100万대가), 대 is a counter (台/代), never the start of a word.
+    if(context && context.start>0 && /[千万億兆余]/u.test(context.raw[context.start-1]) && run.startsWith('대')){
+      traceEvent('numeric-counter-guard',{surface:run});
+      return run;
+    }
     const numericConflict=resolveRuntimeNumericConflict(run,context);
     if(numericConflict) return numericConflict.output;
 
