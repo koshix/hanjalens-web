@@ -1255,6 +1255,34 @@
     return result.output;
   }
 
+  // v4.4 whitespace preservation: a context rule may change words, never the whitespace between them.
+  // Rule templates write a single ' ' where the pattern matched \s+; the input's own whitespace runs are put
+  // back in order. If the number of runs differs, the rule is not applied (hold-only).
+  const WHITESPACE_RUN=/\s+/gu;
+  function expandReplacement(rep,args){
+    if(typeof rep==='function') return rep(...args);
+    let groups=args.length-3;
+    if(typeof args[args.length-1]==='object'&&args[args.length-1]!==null) groups--;
+    return rep.replace(/\$(\$|&|\d{1,2})/gu,(token,ref)=>{
+      if(ref==='$') return '$';
+      if(ref==='&') return args[0];
+      if(ref.length===2&&Number(ref)>=1&&Number(ref)<=groups) return args[Number(ref)]??'';
+      const one=Number(ref[0]);
+      if(one>=1&&one<=groups) return (args[one]??'')+ref.slice(1);
+      return token;
+    });
+  }
+  function keepWhitespace(match,replacement){
+    const source=match.match(WHITESPACE_RUN)||[];
+    const target=replacement.match(WHITESPACE_RUN)||[];
+    if(source.length!==target.length) return match;
+    let k=0;
+    return replacement.replace(WHITESPACE_RUN,()=>source[k++]);
+  }
+  function applyContextRule(text,re,rep){
+    return text.replace(re,(...args)=>keepWhitespace(args[0],expandReplacement(rep,args)));
+  }
+
   function hanjaize(text){
     let prepared=normalize(text);
     const vetoInput=prepared;
@@ -1265,7 +1293,7 @@
     }
     for(let i=0;i<CONTEXT_RULES.length;i++){
       const {re,rep}=CONTEXT_RULES[i];
-      const next=prepared.replace(re,rep);
+      const next=applyContextRule(prepared,re,rep);
       if(next!==prepared) traceEvent('context',{index:i,pattern:String(re)});
       prepared=next;
     }

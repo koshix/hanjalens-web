@@ -1,6 +1,6 @@
 // GENERATED FILE. Edit data/*.tsv and run: node scripts/build-data.mjs
 (function(root,factory){const d=factory();if(typeof module!=="undefined"&&module.exports)module.exports=d;root.HanjaLensData=d;})(typeof globalThis!=="undefined"?globalThis:this,function(){return {
-  "version": "4.2",
+  "version": "4.4",
   "hanja": {
     "가격": "価格",
     "가공식품": "加工食品",
