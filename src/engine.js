@@ -32,6 +32,21 @@
     REVIEWED_COMPOUND_PARTS,REVIEWED_COMPOUND_FORMS,COMPOUND_BLOCKED_PARTS,
     MIXED_PREFIX_RULES,JAPANESE_DISPLAY_OVERRIDES,SAFE_FORMS
   }=RULES;
+  const DOMINANT_NO_VERBAL=RULES.DOMINANT_NO_VERBAL||new Set();
+  const DOMINANT_PARTICLE_FINALS=RULES.DOMINANT_PARTICLE_FINALS||new Set();
+  const DOMINANT_NAME_TITLES=new Set([...(RULES.DOMINANT_NAME_TITLES||[]),...(RULES.DOMINANT_NAME_TITLES_V45||[])]);
+  const DOMINANT_PERSON_TITLES_2=RULES.DOMINANT_PERSON_TITLES_2||new Set();
+  const DOMINANT_TITLE_GAP=RULES.DOMINANT_TITLE_GAP||new Set();
+  const PLACE_NAMES=new Set((DATA.placeNames||'').split(' ').filter(Boolean));
+  const PERSON_PRONE=new Set(DATA.dominantPersonProne||[]);
+  const PLACE_PRONE=new Set(DATA.dominantPlaceProne||[]);
+  const SAME_HANJA_NAMES=new Set(DATA.dominantSameHanjaNames||[]);
+  const DOMINANT_CONTEXT_HOLDS=RULES.DOMINANT_CONTEXT_HOLDS||[];
+  const DOMINANT_GRAMMAR_HOLDS=new Set((DATA.dominantGrammarHolds||'').split(' ').filter(Boolean));
+  const DOMINANT_NAME_HOLDS=DATA.dominantNameHolds||[];
+  const PARTICLES_BY_LENGTH=[...PARTICLES].sort((a,b)=>b.length-a.length);
+  // v4.3 second attempt: word-level context for the dominant layer (set per word by hanjaize/hanjaizeToken).
+  let DOMINANT_CTX={numericBefore:false,nameLike:false};
 
   let ACTIVE_TRACE=null;
   function traceEvent(type,details={}){
@@ -39,11 +54,41 @@
   }
 
   // Provenance-aware dictionary storage is isolated from conversion logic.
+  // v4.3: 'dominant' is the built-in layer of reviewed dominant-reading homographs (data/v43-dominant-accepted.tsv).
+  // It is registered at start-up and treated like the runtime layers (not as core) by every guard below.
+  const DOMINANT=Object.freeze({...(DATA.dominant||{})});
   const DICTIONARIES=DICTIONARY_REGISTRY.createRegistry(HANJA,{
-    layerOrder:['mit','cc-kedict','stdict']
+    layerOrder:['dominant','mit','cc-kedict','stdict']
   });
+  DICTIONARIES.register('dominant',DOMINANT);
 
-  const getHanjaEntry=surface=>DICTIONARIES.get(surface);
+  function dominantBlocked(surface){
+    if(DOMINANT_CTX.nameLike) return true;
+    if(DOMINANT_CTX.numericBefore){
+      const ch=[...surface];
+      if(DOMINANT_PARTICLE_FINALS.has(ch[ch.length-1])) return true;
+    }
+    return false;
+  }
+  const getHanjaEntry=surface=>{
+    const e=DICTIONARIES.get(surface);
+    return e&&e.source==='dominant'&&dominantBlocked(surface) ? DICTIONARIES.get(surface,'dominant') : e;
+  };
+  // v4.3: a dominant-reading entry is a whole-word decision. It never serves as a piece of generic or partial
+  // composition (일수록 is not 日数+록, 일주일 is not 一周+일).
+  // v4.3: a dominant-reading entry yields to a longer known (non-dominant) word that starts the same way:
+  // 지중해를 is 地中海를, never 地中+해를.
+  function dominantShadowed(stem,key){
+    const e=DICTIONARIES.get(key);
+    if(!e||e.source!=='dominant') return false;
+    const chars=[...stem], n0=[...key].length;
+    for(let n=chars.length;n>n0;n--){
+      const pe=DICTIONARIES.get(chars.slice(0,n).join(''));
+      if(pe&&pe.source!=='dominant') return true;
+    }
+    return false;
+  }
+  const getComponentEntry=surface=>DICTIONARIES.get(surface,'dominant');
   const allHanjaKeys=()=>DICTIONARIES.allKeys();
   const dictionarySize=()=>DICTIONARIES.size();
 
@@ -55,6 +100,7 @@
 
   function clearRuntimeDictionaries(){
     DICTIONARIES.clear();
+    DICTIONARIES.register('dominant',DOMINANT);
     refreshDictionary();
   }
 
@@ -295,6 +341,10 @@
     // conservative holds because the whole surface may also be a lexical
     // homograph (e.g. 투자+가 vs 투자가).
     for(const split of particleDecompositions(surface)){
+      // v4.3: a base known only through the dominant-reading layer never blocks an existing whole-word entry
+      // (작곡가 stays 作曲家, not 작곡+가; 자본주의 stays 資本主義, not 자본주+의).
+      const baseEntry=getHanjaEntry(split.base);
+      if(baseEntry && baseEntry.source==='dominant' && !DICTIONARIES.get(split.base,'dominant')) continue;
       const proof=validatedParticleBase(split.base);
       if(!proof) continue;
 
@@ -592,7 +642,7 @@
     function component(part){
       if(isUnsafeCompoundPart(part)) return null;
 
-      const hanjaEntry=getHanjaEntry(part);
+      const hanjaEntry=getComponentEntry(part);
       if(hanjaEntry){
         if([...part].length<2) return null;
         return {
@@ -835,7 +885,9 @@
       const noun=stem.slice(0,-suffix.length);
       if(isUnsafeFor(noun,SAFETY_ROLES.DERIVED_BASE)) continue;
       const hanjaEntry=getHanjaEntry(noun);
-      if(hanjaEntry){
+      // v4.3: a dominant-reading noun takes only multi-syllable copula endings (방침이다); a one-syllable ending
+      // such as -일 is too often the rest of a longer word (일주+일 = 일주일).
+      if(hanjaEntry && !(hanjaEntry.source==='dominant' && ([...suffix].length<2 || dominantShadowed(stem,noun)))){
         const output=hanjaEntry.output+suffix;
         traceEvent('copula',{surface:stem,noun,suffix,output,source:hanjaEntry.source});
         return output;
@@ -855,7 +907,8 @@
       const noun=stem.slice(0,-suffix.length);
       if(isUnsafeFor(noun,SAFETY_ROLES.DERIVED_BASE) || !hasNoFinalConsonantHangul(noun)) continue;
       const hanjaEntry=getHanjaEntry(noun);
-      if(hanjaEntry){
+      // v4.3: never for dominant-reading nouns (지지다 is a native verb, not 支持다).
+      if(hanjaEntry && hanjaEntry.source!=='dominant'){
         const output=hanjaEntry.output+suffix;
         traceEvent('contracted-copula',{surface:stem,noun,suffix,output,source:hanjaEntry.source});
         return output;
@@ -887,6 +940,8 @@
       if(isUnsafeFor(k,SAFETY_ROLES.DERIVED_BASE) || !stem.startsWith(k)) continue;
       const rest=stem.slice(k.length);
       if(!rest) continue;
+      if(dominantShadowed(stem,k)) continue;
+      if(DOMINANT_NO_VERBAL.has(k) && DICTIONARIES.get(k)?.source==='dominant') continue;
       const safeVerb=VERBAL_EXACT.has(rest) || VERBAL_PREFIXES.some(p=>rest.startsWith(p));
 
       if(
@@ -940,7 +995,7 @@
     function component(part){
       if(isUnsafeCompoundPart(part)) return null;
 
-      const hanjaEntry=getHanjaEntry(part);
+      const hanjaEntry=getComponentEntry(part);
       if(hanjaEntry){
         if([...part].length<2) return null;
         return {
@@ -1234,9 +1289,10 @@
     return run;
   }
 
-  function hanjaizeToken(raw){
+  function hanjaizeToken(raw,nameLike=false){
     return raw.replace(/[가-힣]+/gu,(run,offset)=>{
       const before=offset>0 ? raw[offset-1] : '';
+      DOMINANT_CTX={numericBefore:/[0-9]/u.test(before),nameLike};
       return convertHangulRun(run,{
         raw,
         start:offset,
@@ -1297,7 +1353,58 @@
       if(next!==prepared) traceEvent('context',{index:i,pattern:String(re)});
       prepared=next;
     }
-    const converted=prepared.split(/(\s+)/).map(x=>/[가-힣]/u.test(x)?hanjaizeToken(x):x).join('');
+    const parts=prepared.split(/(\s+)/);
+    const words=parts.map((x,i)=>[x,i]).filter(([x])=>x&&!/^\s+$/u.test(x));
+    const bare=w=>w.replace(/[^가-힣]/gu,'');
+    const nameLikeAt=new Set();
+    // strip one trailing particle (or the colloquial locative 서) for list lookups: 처인구서 → 처인구, 총리는 → 총리
+    const stem=t=>{
+      for(const p of PARTICLES_BY_LENGTH) if(t.length>p.length&&t.endsWith(p)) return t.slice(0,-p.length);
+      return t.length>2&&t.endsWith('서') ? t.slice(0,-1) : t;
+    };
+    for(let k=0;k<words.length;k++){
+      const [w,idx]=words[k];
+      // v4.3b: a three-syllable word followed within two words by a title is a name.
+      if(/^[가-힣]{3}$/u.test(w)){
+        for(const [n] of words.slice(k+1,k+3)){
+          if(DOMINANT_NAME_TITLES.has(bare(n))){ nameLikeAt.add(idx); break; }
+        }
+      }
+      const b=bare(w), base=stem(b);
+      // v4.5 (b): a reviewed person-prone word (대처, 지성 …) directly followed by a person title (전/현 … may stand between).
+      if(PERSON_PRONE.has(base)&&k+1<words.length){
+        const n1=bare(words[k+1][0]), n2=k+2<words.length ? bare(words[k+2][0]) : '';
+        if(DOMINANT_PERSON_TITLES_2.has(stem(n1))||(DOMINANT_TITLE_GAP.has(n1)&&DOMINANT_PERSON_TITLES_2.has(stem(n2)))) nameLikeAt.add(idx);
+      }
+      // v4.5 (c): a word that is itself a place name with a different Hanja (영광, 광산, 천지 …), right after or right
+      //            before an administrative place name. Places written with the same Hanja (제주, 동해) are not held.
+      if((PLACE_PRONE.has(base)||PLACE_NAMES.has(base))&&!SAME_HANJA_NAMES.has(base)&&
+        ((k>0&&PLACE_NAMES.has(stem(bare(words[k-1][0]))))||(k+1<words.length&&PLACE_NAMES.has(stem(bare(words[k+1][0])))))) nameLikeAt.add(idx);
+      // v4.5 (b): a reviewed person-prone word with a particle that only follows people (대처에게, 지성께서).
+      const animate=b.match(/^([가-힣]{2})(?:에게|에게서|에게는|에게도|한테|한테서|께서|께)$/u);
+      if(animate&&PERSON_PRONE.has(animate[1])) nameLikeAt.add(idx);
+      // v4.6: eojeol forms in which the dominant surface is usually part of a verb, counter or ending (고인, 만인, 회당),
+      // from offline analyzer counts (data/v46-grammar-holds.tsv).
+      if(DOMINANT_GRAMMAR_HOLDS.has(b)) nameLikeAt.add(idx);
+      // v4.6: a two-syllable word ending in 지 before 않/말/못 is the long negation of a one-syllable verb (책임을 지지 않는다, 해가 지지 않는).
+      if(b.length===2&&b.endsWith('지')&&k+1<words.length&&/^(?:않|말|못)/u.test(bare(words[k+1][0]))) nameLikeAt.add(idx);
+      // v4.5 second attempt: fixed phrases with the other reading of a dominant word.
+      for(const h of DOMINANT_CONTEXT_HOLDS){
+        if(base!==h.word&&!(h.self&&h.self.test(b))) continue;
+        if(h.self&&!h.self.test(b)) continue;
+        if(h.prev&&!(k>0&&h.prev.test(bare(words[k-1][0])))) continue;
+        if(h.next&&!(k+1<words.length&&h.next.test(bare(words[k+1][0])))) continue;
+        nameLikeAt.add(idx); break;
+      }
+      // v4.5 (d): reviewed names that are a dominant word plus one syllable (이주한, 조인성), alone or with a particle.
+      if(DOMINANT_NAME_HOLDS.some(name=>b===name||(b.startsWith(name)&&PARTICLES.includes(b.slice(name.length))))) nameLikeAt.add(idx);
+    }
+    let converted;
+    try{
+      converted=parts.map((x,i)=>/[가-힣]/u.test(x)?hanjaizeToken(x,nameLikeAt.has(i)):x).join('');
+    }finally{
+      DOMINANT_CTX={numericBefore:false,nameLike:false};
+    }
     // Final normalization is deliberately centralized here so every output path
     // (core dictionary, runtime dictionaries, phrases, mixed forms, context rules)
     // is guaranteed to use Japanese-standard glyphs.

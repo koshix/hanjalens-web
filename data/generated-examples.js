@@ -1,6 +1,6 @@
 // GENERATED FILE. Edit data/examples.tsv and run: node scripts/build-examples.mjs
 (function(root,factory){const d=factory();if(typeof module!=="undefined"&&module.exports)module.exports=d;root.HanjaLensExamples=d;})(typeof globalThis!=="undefined"?globalThis:this,function(){return {
-  "version": "4.4",
+  "version": "4.6",
   "examples": [
     {
       "id": "ex001",
@@ -601,7 +601,7 @@
       "id": "ex086",
       "category": "realtext-general-v2",
       "input": "검찰은 관련 인사들을 소환하여 조사를 진행 중이다.",
-      "expected": "検察은 関連 人士들을 召喚하여 조사를 進行 중이다.",
+      "expected": "検察은 関連 人士들을 召喚하여 調査를 進行 중이다.",
       "translation": "検察は関係者らを召喚し、調査を進めている。"
     },
     {
@@ -1532,7 +1532,7 @@
       "id": "ex219",
       "category": "realtext-domain-v2.2",
       "input": "다문화 가정에 대한 지원 체계를 강화해야 한다는 목소리가 크다.",
-      "expected": "多文化 가정에 대한 지원 体系를 強化해야 한다는 목소리가 크다.",
+      "expected": "多文化 가정에 대한 支援 体系를 強化해야 한다는 목소리가 크다.",
       "translation": "多文化家庭への支援体制を強化すべきだという声が大きい。"
     },
     {
@@ -1763,7 +1763,7 @@
       "id": "ex252",
       "category": "science-physics-v2.3.1",
       "input": "빛의 속도는 진공에서 일정하다는 이론이 현대 물리학의 중요한 기준이 된다.",
-      "expected": "빛의 速度는 진공에서 일정하다는 理論이 現代 物理学의 重要한 基準이 된다.",
+      "expected": "빛의 速度는 真空에서 일정하다는 理論이 現代 物理学의 重要한 基準이 된다.",
       "translation": "光の速度は真空中で一定であるという理論が、現代物理学の重要な基準となる。"
     },
     {
@@ -1784,7 +1784,7 @@
       "id": "ex255",
       "category": "science-physics-v2.3.1",
       "input": "전기 회로의 구조를 변경하면 전류와 전압의 관계도 달라질 수 있다.",
-      "expected": "전기 回路의 構造를 変更하면 전류와 電圧의 関係도 달라질 수 있다.",
+      "expected": "전기 回路의 構造를 変更하면 電流와 電圧의 関係도 달라질 수 있다.",
       "translation": "電気回路の構造を変更すると、電流と電圧の関係も変わり得る。"
     },
     {

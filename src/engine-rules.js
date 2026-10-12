@@ -569,8 +569,109 @@
     {re:/(영문|한글|문자)\s+약자(?=\s|$|[,.!?，。！？]|가|는|를|의)/gu,rep:'$1 略字'},
     // 점: 点 in discourse/score senses only.
     {re:/(이런|그런|어떤|좋은|나쁜|중요한|특이한)\s+점(?=\s|$|[,.!?，。！？]|이|가|은|는|을|를|에서|에)/gu,rep:'$1 点'},
-    {re:/(\d+)점(?=\s|$|[,.!?，。！？]|을|를|이|가|은|는|으로)/gu,rep:'$1点'}
+    {re:/(\d+)점(?=\s|$|[,.!?，。！？]|을|를|이|가|은|는|으로)/gu,rep:'$1点'},
+
+    // v4.3 (B): reviewed context rules for frequent homographs that method A cannot take (docs/V43-CYCLE-PREREGISTRATION.md
+    // §1B). Bare forms stay as before; a reading is chosen only by the neighbouring word or ending named here. They run
+    // after every older rule, so earlier reviewed decisions (e.g. 대학에 지원 → 志願) keep precedence.
+    // 지원: 支援 by a support domain before it, a support noun after it, or a support verb phrase.
+    {re:/(금융|자금|정책|행정|국가|군사|무기|인도적|정책적|적극|전폭적|전방위|직접|추가|집중|맞춤형|현금|예산|국비|세제|법률|심리|학습|돌봄|양육|육아|고용|일자리|피해|재난|복구|운영|물류|후방|경제적|재정적|기술적|해외|대북|대외)(\s+)지원(?=\s|$|[,.!?，。！？)]|을|를|이|가|은|는|에|으로|과|와|도|의|하|해|했|한|할|키로|책|금)/gu,rep:'$1$2支援'},
+    {re:/(?<![가-힣])지원(\s+)(방안|규모|확대|강화|체계|조치|방침|계획|금액|내용|기간|인력|물자|물품|정책|패키지|협정|기구|단체)(?=\s|$|[,.!?，。！？)]|을|를|이|가|은|는|에|의|도|과|와|으로|로)/gu,rep:'支援$1$2'},
+    {re:/(?<![가-힣])지원(을|이|도)(\s+)(받|아끼|확대|늘리|늘렸|강화|약속|요청|호소|촉구|중단|끊|철회|계속)/gu,rep:'支援$1$2$3'},
+    {re:/(?<![가-힣])지원(금|책|액)(?=\s|$|[,.!?，。！？)]|을|를|이|가|은|는|에|의|도|으로|과|와)/gu,rep:(m,s)=>'支援'+({'금':'金','책':'策','액':'額'})[s]},
+    // 조사: 調査 by an investigating body or survey word before it, or a survey/investigation phrase after it.
+    {re:/(경찰|검찰|수사|세무|정밀|특별|합동|추가|진상|국정|직권|기초|표본|전국|정기|자체|면접|심층|예비|현지|본격|강제|당국|소방|공정위|금감원|정부|감사원|소비자|국민|직원)(\s+)조사(?=\s|$|[,.!?，。！？)]|을|를|이|가|은|는|에|에서|의|도|하|해|했|한|할|중|결과)/gu,rep:'$1$2調査'},
+    {re:/(?<![가-힣])조사(\s+)(결과|대상|방법|기간|보고서|자료|항목|팀|단|위원회|위원|기관|과정|내용|중|당시|범위|착수|발표|업체|기법)(?=\s|$|[,.!?，。！？)]|을|를|이|가|은|는|에|의|도|에서|로|으로)/gu,rep:'調査$1$2'},
+    {re:/(?<![가-힣])조사(에|를|가)(\s+)(따르면|벌이|벌였|나서|나섰|착수|진행|받|마치|마쳤|실시|의뢰)/gu,rep:'調査$1$2$3'},
+    // 이상: 以上 after a number (with or without a unit) or a quantity word; 異常 with symptom/anomaly words.
+    // v4.6: reference points (전고점, 기준, 가격 …) before 이상 mean 以上 (전고점 이상 거래 = trades at or above the previous peak).
+    {re:/(?<=(?:\d|[千万億兆余%％])(?:[가-힣]{0,3}|名|件|ウォン|度)?)(\s?)이상(?=\s|$|[,.!?，。！？)]|의|으로|이|을|은|도|에서|이면|일|인|이다|이었|이던|이나|까지)/gu,rep:'$1以上'},
+    {re:/(?<![가-힣])(절반|과반|평균|기대|예상|목표|수준|그|이|두\s*배|배|고점|전고점|최고점|기준|기준치|기준선|가격|시세|호가)(\s+)이상(?=\s|$|[,.!?，。！？)]|의|으로|이|을|은|도|에서|이면|일|인|이다|이었|이던|이나|까지)/gu,rep:'$1$2以上'},
+    {re:/(?<![가-힣])이상(\s+)(기후|기온|징후|증상|반응|현상|행동|신호|고온|저온|과열|거래|소견|유무|여부|발생|감지)(?=\s|$|[,.!?，。！？)]|을|를|이|가|은|는|에|의|도|으로|로)/gu,rep:'異常$1$2'},
+    // 사고: 事故 by an accident type before it or an accident phrase after it.
+    {re:/(대형|인명|중대|사망|폭발|붕괴|전복|침몰|낙상|끼임|감전|질식|누출|원전|공사|현장|운전|음주|오토바이|버스|트럭|차량|자동차|지하철|어선|보트|등산|물놀이|익수|철도|비행기|여객기|안전)(\s+)사고(?=\s|$|[,.!?，。！？)]|가|는|를|의|로|에|도|와|과|를|이후|당시|현장)/gu,rep:'$1$2事故'},
+    {re:/(?<![가-힣])사고(\s+)(당시|직후|이후|경위|피해|차량|소식|수습|대응|책임|보상|보험|재발|건수|다발|지역|희생자|유족|피해자|대책)(?=\s|$|[,.!?，。！？)]|을|를|이|가|은|는|에|의|도|로|으로)/gu,rep:'事故$1$2'},
+    {re:/(?<![가-힣])사고(가|를|로)(\s+)(발생|났|나|잇따|일어나|일어났|내|냈|당|숨|숨졌|다쳤|부상|사망|목숨)/gu,rep:'事故$1$2$3'},
+    // 시행: 施行 with verbal endings or administrative words (試行錯誤 is converted earlier).
+    // Bare verbal 시행된다 and 시행 여부 stay held (earlier reviews: corpus-general, ambiguity corpus amb023).
+    {re:/(?<![가-힣])시행(?=에\s+들어|을\s+앞두|\s+(?:첫날|초기|이후|과정|방안|예정|시기|일자|일정|규칙|세칙|령))/gu,rep:'施行'},
+    // 인상: 引上 for price/rate rises (verb endings, rate words); 印象 for impressions.
+    {re:/(금리|가격|요금|임금|세율|관세|등록금|최저임금|수수료|보험료|공공요금|물가|운임|월세|기준금리|단가|연봉|급여|부담금|이자율|분담금|보수|수가|약가|세금|사용료|전기료|가스요금|수도요금)(을|를|이|가|은|는|의|도)?(\s*)인상(?=\s|$|[,.!?，。！？)]|을|를|이|가|은|는|에|의|도|으로|하|한|했|할|해|키|됐|된|되|될|돼|률|폭|분|안)/gu,rep:'$1$2$3引上'},
+    {re:/(?<![가-힣])인상(?=하|했|할|키|됐|되|될|돼|률|폭|분|안을|안이|안은|안)/gu,rep:'引上'},
+    {re:/(?<![가-힣])인상(을|이|은)(\s+)(깊|남기|남겼|받|주|줬|준|풍기)/gu,rep:'印象$1$2$3'},
+    {re:/(?<![가-힣])인상적(?=인|이|으로|이다|이었|입니|일|\s|$|[,.!?，。！？)])/gu,rep:'印象的'},
+    {re:/(?<![가-힣])인상(?=깊|\s+깊)/gu,rep:'印象'},
+    // 복수: 複数 before plurality nouns; 復讐 with revenge verbs.
+    {re:/(?<![가-힣])복수(\s*)(의|국적|노조|응답|정답|후보|선택|의결권|여권|비자|전공|학위|추천|매체|업체|기관|국가|관계자|소식통|당국자)(?=\s|$|[,.!?，。！？)]|을|를|이|가|은|는|에|의|도|로|으로|와|과|들)/gu,rep:'複数$1$2'},
+    {re:/(?<![가-힣])복수(?=하|했|할|극|심|를\s+다짐|에\s+나서)/gu,rep:'復讐'},
+    // 사전: 事前 before procedure words; 辞典 for dictionaries.
+    {re:/(?<![가-힣])사전(\s*)(투표|예약|신청|조사|협의|준비|점검|검토|승인|등록|고지|통보|교육|예방|공지|허가|심사|차단|합의|조율|논의|작업|경고|안내|검증|평가|접수|교감|대응|청약|판매|구매|선거운동|모의|정보|동의|인지|계획)(?=\s|$|[,.!?，。！？)]|을|를|이|가|은|는|에|의|도|로|으로|과|와|하|해|했|한|할|제)/gu,rep:'事前$1$2'},
+    {re:/(국어|영어|한자|백과|전자)(\s?)사전(?=\s|$|[,.!?，。！？)]|을|를|이|가|은|는|에|의|에서|도)/gu,rep:(m,a,sp)=>({'국어':'国語','영어':'英語','한자':'漢字','백과':'百科','전자':'電子'})[a]+sp+'辞典'},
+    // 채권: 債券 (bonds) with market words; 債権 (claims) with creditor words.
+    {re:/(?<![가-힣])채권(\s*)(시장|금리|가격|수익률|투자|발행|매입|매도|펀드|운용|매각|지수|형|투자자|발행액)(?=\s|$|[,.!?，。！？)]|을|를|이|가|은|는|에|의|도|로|으로|과|와)/gu,rep:'債券$1$2'},
+    {re:/(?<![가-힣])채권(자|단)(?=\s|$|[,.!?，。！？)]|을|를|이|가|은|는|에|의|도|로|으로|과|와|들)/gu,rep:(m,x)=>'債権'+({'자':'者','단':'団'})[x]},
+    {re:/(?<![가-힣])채권(\s+)(추심|회수|채무|보전|양도)(?=\s|$|[,.!?，。！？)]|을|를|이|가|은|는|에|의|도|로|으로|과|와)/gu,rep:'債権$1$2'},
+    // 정황 → 情況, 증시 → 証市, 기반 → 基盤, 적립 → 積立, 강세 → 強勢: the other dictionary spellings are archaic or proper
+    // names; converted with a particle, ending or a following space only.
+    {re:/(?<![가-힣])정황(?=\s|$|[,.!?，。！？)]|이|을|상|도|만|과|들|증거|으로|이다)/gu,rep:'情況'},
+    {re:/(?<![가-힣])증시(?=\s|$|[,.!?，。！？)]|에|에서|는|가|의|를|도|와|과|로|가\s|는\s)/gu,rep:'証市'},
+    {re:/(?<![가-힣])기반(?=\s|$|[,.!?，。！？)]|을|이|으로|의|도|과|와|에|하|한|해|이다|시설|구축|조성)/gu,rep:'基盤'},
+    {re:/(?<![가-힣])적립(금|식|액|률)(?=\s|$|[,.!?，。！？)]|을|를|이|가|은|는|에|의|도|으로|로|과|와)/gu,rep:(m,x)=>'積立'+({'금':'金','식':'式','액':'額','률':'率'})[x]},
+    {re:/(?<![가-힣])적립(?=\s|$|[,.!?，。！？)]|하|해|했|한|할|된|되|됐|을|이|도|에)/gu,rep:'積立'},
+    {re:/(?<![가-힣])강세(?=\s|$|[,.!?，。！？)]|를|가|로|다|였|를|장|도|의|에|는|였다|를\s+보)/gu,rep:'強勢'},
+    // 원장: 院長 after an institution ending in -원 (幼稚園 / 公園 / 庭園 / 動物園 / 植物園 are not 院).
+    {re:/((?:병|의|한의|치과의|감사|연구|법|금감|금융감독|국정|국가정보|학|기술|진흥|개발|평가|정책연구|교육|교육연수|산업연구|경제연구|통일연구|과학기술)원)(\s+)원장(?=\s|$|[,.!?，。！？)]|이|은|는|을|를|의|과|와|도|에게|직|으로|들)/gu,rep:'$1$2院長'}
   ];
+
+  // v4.3 second attempt (docs/V43-SECOND-ATTEMPT-PREREGISTRATION.md): word-level context for the dominant layer.
+  // (1) Right after a digit, a dominant entry whose last syllable is also a particle is not used (6호의 = No. 6's,
+  //     not 6好意). (2) A three-syllable word followed within two words by a title is treated as a person's name, and
+  //     the dominant layer is not used for it (이주한 이식외과 교수 = Prof. Lee Ju-han, not 移住한).
+  const DOMINANT_PARTICLE_FINALS=new Set(['의','이','가','도','로','은','는','을','를','와','과','에','만','나']);
+  const DOMINANT_NAME_TITLES=new Set(['교수','교수는','교수가','교수팀','의원','대표','기자','씨','원장','사장','회장','장관','위원장',
+    '총장','박사','감독','선수','의사','변호사','검사','판사','소장','부장','과장','팀장','교사','작가','시인','대통령','총리','대변인',
+    '이사장','연구원','전문의','부사장','상무','전무','실장','국장','차관','지사','시장','군수','구청장','의장','위원','교육감','청장',
+    '처장','단장','센터장','병원장','원내대표','후보','대사','이사','고문','앵커','배우','가수','화백','사무총장','경위','경감','경정',
+    '총경','경사','순경','님','교장','원로','명예교수','부교수','조교수','석좌교수','책임연구원','선임연구원']);
+
+  // v4.5 proper-noun cycle (docs/V45-CYCLE-PREREGISTRATION.md): hold-only word context for the dominant layer.
+  // (b) a two-syllable word directly followed by a person title (optionally after 전/현/前/당시) is a person's name
+  //     (대처 전 총리, 지성 씨). Titles that are also common nouns (후보, 의사 …) are not in this list.
+  // (c) place-name sequences use the administrative name list data/v45-place-names.tsv (DATA.placeNames).
+  const DOMINANT_NAME_TITLES_V45=['수상','여사','총리'];
+  const DOMINANT_PERSON_TITLES_2=new Set(['씨','님','여사','총리','수상','대통령','교수','의원','장관','기자','감독','선수','배우','가수','작가',
+    '시인','화백','회장','사장','부회장','총장','박사','변호사','대변인','앵커','국왕','여왕','왕','황제','왕비','교황','추기경','목사','신부','스님']);
+  const DOMINANT_TITLE_GAP=new Set(['전','현','前','現','당시','고']);
+
+  // v4.5 second attempt (docs/V45-SECOND-ATTEMPT-PREREGISTRATION.md): fixed phrases in which a frequent dominant word has
+  // its other reading (장관을 이루다 = 壮観, 외교적 수사 = 修辞, 기지를 발휘 = 機智, 조화를 보내다 = 弔花 …). The word stays in
+  // Hangul there (hold-only). self: the word with an optional particle; prev / next: the neighbouring words (Hangul only).
+  const DOMINANT_CONTEXT_HOLDS=[
+    {word:'장관',self:/^장관(?:을|이)?$/u,next:/^(?:이루|이룬|이뤄|연출|펼쳐|자아)/u},
+    {word:'장관',self:/^장관(?:이다|이었다|이었고|이었지만)$/u},
+    {word:'수사',prev:/^(?:외교적|정치적|화려한|과장된|수사학적|미사여구)/u},
+    {word:'수사',self:/^수사(?:에|일|로)$/u,next:/^(?:불과|그치|그쳤|뿐)/u},
+    {word:'기지',next:/^발휘/u},
+    {word:'조화',next:/^(?:보내|보냈|보낸|보내왔|전달|놓|헌화)/u},
+    {word:'조화',prev:/^(?:근조|추모|조문|빈소에|빈소)/u},
+    {word:'육성',self:/^육성으로$/u},
+    {word:'육성',next:/^(?:녹음|파일|증언|메시지|녹취|연설)/u},
+    {word:'제창',prev:/^(?:애국가|국가|교가|만세|구호|응원가)/u},
+    {word:'중지',self:/^중지를$/u,next:/^모/u},
+    {word:'존속',next:/^(?:살해|살인|폭행|상해|학대|살해죄)/u},
+    {word:'관용',next:/^(?:여권|차|차량|버스|헬기|기)/u},
+    {word:'마술',next:/^(?:경기|종목|선수|대표|마장)/u},
+    {word:'마술',prev:/^(?:승마|종합|장애물)/u},
+    {word:'경보',next:/^(?:경기|종목|선수|\d)/u},
+    {word:'경보',prev:/^(?:남자|여자|남녀)$/u},
+    {word:'유학',next:/^(?:사상|경전|이념|자|자들|자의|적)/u},
+    {word:'유학',prev:/^(?:성리학|조선|공자|불교와|도교와)/u},
+    {word:'주석',self:/^주석(?:이|을)$/u,next:/^(?:달|붙)/u}
+  ];
+
+  // v4.3: dominant-reading nouns whose 하다 forms usually mean something else (시기하다 = to envy, 초연하다 = aloof);
+  // the noun converts, the 하다 forms stay in Hangul. Reviewed after the v4.3 re-screen of the random sample.
+  const DOMINANT_NO_VERBAL=new Set(['시기','초연']);
 
   const PARTICLES=['으로부터','로부터','만으로는','에게서는','에게서도','에게는','에게도','에서는','에서도','에는','에도','으로는','로서는','으로서','로서','으로도','로도','와의','과의','에서','에게서','에게','한테','으로','로','까지','부터','보다','처럼','만큼','하고','와','과','의','은','는','이','가','을','를','에','도','만','뿐'];
   const COPULA_SUFFIXES=['인가요','이라고는','이라는','이라고','이라면','이라도','이라고요','이에요','예요','입니다','이다','이었다','였어요','이었어요','이고','이며','이면','이세요','인','일'];
@@ -1128,6 +1229,13 @@ const ROMANIZATION_COMPOUNDS={'민주공화국':['민주','공화국']};
     MIXED_PREFIX_RULES,
     JAPANESE_DISPLAY_OVERRIDES,
     SAFE_FORMS,
+    DOMINANT_NO_VERBAL,
+    DOMINANT_CONTEXT_HOLDS,
+    DOMINANT_NAME_TITLES_V45,
+    DOMINANT_PERSON_TITLES_2,
+    DOMINANT_TITLE_GAP,
+    DOMINANT_PARTICLE_FINALS,
+    DOMINANT_NAME_TITLES,
     INITIAL,
     MEDIAL,
     FINAL,

@@ -18,11 +18,13 @@
     const order=Object.freeze([...layerOrder]);
     const layers=Object.create(null);
 
-    function get(surface){
+    // skip: optional layer name to look past (v4.3: building blocks ignore the 'dominant' layer).
+    function get(surface,skip){
       if(hasOwn(core,surface)){
         return {surface,output:core[surface],source:'core'};
       }
       for(const source of order){
+        if(source===skip) continue;
         const dict=layers[source];
         if(dict&&hasOwn(dict,surface)){
           return {surface,output:dict[surface],source};
