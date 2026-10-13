@@ -119,6 +119,19 @@
   // v4.8 ③: a reviewed formerly-protected word stays out of composition, as it was while protected (otherwise MIT 房門
   // would enter 현장방문 → 現場房門).
   const getComponentEntry=surface=>REVIEWED_NO_FALLBACK.has(surface)?undefined:DICTIONARIES.get(surface,'dominant');
+  // v4.9 M2: in a full composition (every part known) a dominant-reading word may be a part (미래대응기금 → 未来対応基金),
+  // unless parallel-corpus compounds show it is unreliable there (DOMINANT_NO_COMPONENT). Partial composition still
+  // ignores the dominant layer (일주일 is not 一周+일).
+  // v4.9 M1: head -> {reading} or {after:{last part of base: reading}} (data/v49-compound-heads.tsv via generated data).
+  const COMPOUND_HEADS=Object.entries(DATA.compoundHeads||{});
+  const DOMINANT_NO_COMPONENT=new Set(DATA.dominantNoComponent||[]);
+  const getFullComponentEntry=surface=>{
+    const e=getComponentEntry(surface);
+    if(e||!HEADS_ENABLED) return e;
+    if(REVIEWED_NO_FALLBACK.has(surface)||DOMINANT_NO_COMPONENT.has(surface)) return undefined;
+    const d=DICTIONARIES.get(surface);
+    return d&&d.source==='dominant'?d:undefined;
+  };
   const allHanjaKeys=()=>DICTIONARIES.allKeys();
   const dictionarySize=()=>DICTIONARIES.size();
 
@@ -683,7 +696,9 @@
   // It only composes already-known core / loanword components and refuses
   // ambiguous best segmentations. One-syllable core components are excluded;
   // one-syllable loanwords such as 팀 may participate.
-  function genericCompose(surface){
+  // strict (v4.9, base of a compound head): no CC-KEDICT part, and every full segmentation must give the same output
+  // (농업인재개발 is refused: 農業+人材+開発 vs 農業人+再開発).
+  function genericCompose(surface,strict=false){
     if(!surface || isUnsafeFor(surface,SAFETY_ROLES.DERIVED_BASE)) return surface;
 
     // v3.5 safety: do not segment an unknown surface while a Korean
@@ -699,14 +714,14 @@
       if(surface.length<=p.length || !surface.endsWith(p)) continue;
       const particleStem=surface.slice(0,-p.length);
       if(isUnsafeFor(particleStem,SAFETY_ROLES.PARTICLE_STEM)) continue;
-      const convertedStem=convertDerived(particleStem);
+      const convertedStem=convertWithoutHeads(particleStem);
       if(convertedStem!==particleStem) return surface;
     }
     for(const p of EXTRA_PARTICLES){
       if(surface.length<p.length+2 || !surface.endsWith(p)) continue;
       const particleStem=surface.slice(0,-p.length);
       if(isUnsafeFor(particleStem,SAFETY_ROLES.PARTICLE_STEM) || !extraStemOk(particleStem,p)) continue;
-      if(convertDerived(particleStem)!==particleStem) return surface;
+      if(convertWithoutHeads(particleStem)!==particleStem) return surface;
     }
 
     const chars=[...surface];
@@ -718,7 +733,7 @@
     function component(part){
       if(isUnsafeCompoundPart(part)) return null;
 
-      const hanjaEntry=getComponentEntry(part);
+      const hanjaEntry=getFullComponentEntry(part);
       if(hanjaEntry){
         if([...part].length<2) return null;
         return {
@@ -770,8 +785,41 @@
       return rows;
     }
 
-    const candidates=rec(0).filter(parts=>parts.length>=2);
+    // v4.9 M2: a composition with a dominant-reading part uses only reliable parts (core, dominant, MIT, reviewed; no
+    // STDICT / CC-KEDICT word, no loanword): 식품+의약+품안+전처 and 일수+록 are refused.
+    // A dominant part must not cut through a longer known word (자동|차용 cuts 자동차, 보고|서안 cuts 보고서).
+    const DOMINANT_PART_PEERS=new Set(['core','dominant','mit','reviewed']);
+    function cutsKnownWord(parts){
+      let pos=0; const spans=parts.map(x=>{const a=pos; pos+=[...x.surface].length; return [a,pos,x];});
+      for(const [i,j,x] of spans){
+        if(x.source!=='dominant') continue;
+        for(let a=0;a<n;a++) for(let b=a+3;b<=n;b++){
+          const crosses=(a<i&&i<b&&b<=j)||(i<=a&&a<j&&j<b)||(a<i&&j<b);
+          if(!crosses) continue;
+          const e=DICTIONARIES.get(chars.slice(a,b).join(''));
+          if(e&&e.source!=='dominant') return true;
+        }
+      }
+      return false;
+    }
+    // In a composition with a dominant part the last part must not end in a particle / copula syllable
+    // (계산기+인 is not 計算+起因, 외무성+과의 is not 外務+成果+의).
+    const lastIsGrammar=parts=>{const l=parts[parts.length-1];if(!parts.some(x=>x.source==='dominant'))return false;const ch=[...l.surface];
+      const f=ch[ch.length-1];return DOMINANT_PARTICLE_FINALS.has(f)||f==='인'||f==='별';};   // 금융사+별, not 金融+死別
+    // A dominant composition never repeats a part (야금야금, 부지부지 are native reduplicated adverbs).
+    const repeats=parts=>parts.some((x,i)=>i>0&&x.surface===parts[i-1].surface);
+    // v4.9 second attempt: a dominant part right before 위원… is usually an abbreviation (원안위원장 = 원안위 위원장, not 原案).
+    const abbrevBeforeCommittee=parts=>parts.some((x,i)=>x.source==='dominant'&&i+1<parts.length&&parts[i+1].surface.startsWith('위원'));
+    const candidates=rec(0).filter(parts=>parts.length>=2&&!lastIsGrammar(parts)&&
+      !(repeats(parts)&&parts.some(x=>x.source==='dominant'))&&!abbrevBeforeCommittee(parts)&&
+      (!parts.some(x=>x.source==='dominant')||
+        (parts.every(x=>DOMINANT_PART_PEERS.has(x.source||x.type)&&!DOMINANT_NO_COMPONENT.has(x.surface))&&!cutsKnownWord(parts)))&&
+      (!strict||parts.every(x=>DOMINANT_PART_PEERS.has(x.source||x.type)||x.type==='loan'||
+        (x.source==='stdict'&&[...x.surface].length>=3))));   // v4.9 second attempt: no 2-syllable STDICT part (노란 → 虜乱)
     if(!candidates.length) return surface;
+    if(strict&&new Set(candidates.map(parts=>parts.map(x=>x.output).join(''))).size>1) return surface;
+    // strict: STDICT parts may be at most half of the parts (총결+기집 is refused; 식품+의약품+안전 is kept).
+    if(strict&&candidates[0].filter(x=>x.source==='stdict').length*2>candidates[0].length) return surface;
 
     function score(parts){
       return {
@@ -779,7 +827,9 @@
         square:parts.reduce(
           (sum,x)=>sum+([...x.surface].length ** 2),
           0
-        )
+        ),
+        // v4.9 M2: at an equal score a segmentation without dominant parts wins (v4.8 behaviour is kept).
+        dominant:parts.filter(x=>x.source==='dominant').length
       };
     }
 
@@ -787,7 +837,8 @@
       .map(parts=>({parts,score:score(parts)}))
       .sort((a,b)=>
         a.score.count-b.score.count ||
-        b.score.square-a.score.square
+        b.score.square-a.score.square ||
+        a.score.dominant-b.score.dominant
       );
 
     const best=ranked[0];
@@ -795,7 +846,8 @@
     if(ranked.length>1){
       const tied=ranked.filter(row=>
         row.score.count===best.score.count &&
-        row.score.square===best.score.square
+        row.score.square===best.score.square &&
+        row.score.dominant===best.score.dominant
       );
 
       if(tied.length>1){
@@ -826,6 +878,60 @@
       }))
     });
     return output;
+  }
+
+  // v4.9 M1: one-syllable compound heads whose reading is stable in parallel corpora (data/v49-compound-heads.tsv).
+  // The base (2+ syllables) must be a known whole word ('exact') or a generic composition ('composed') shown completely;
+  // a head with a reading that depends on the base is used only after a listed last part (rule.after), and never after a
+  // listed part (rule.notAfter: 내각부 = 内閣府). Particle deferral checks run without heads (전체회의 stays 全体会議,
+  // not 全体会+의).
+  let HEADS_ENABLED=true;
+  // One-syllable Sino prefixes: 부재료 is 副+材料, 전작품 is 全+作品 (not 不在+料, 前作+品).
+  const HEAD_BASE_PREFIXES=new Set([...'전총각본신구반비무미재초고저대소주부타매제첫다탈']);
+  function compoundHead(stem,mode){
+    if(!HEADS_ENABLED) return null;
+    for(const [suffix,rule] of COMPOUND_HEADS){
+      if(stem.length<=suffix.length||!stem.endsWith(suffix)) continue;
+      const base=stem.slice(0,-suffix.length);
+      if([...base].length<2 || PROTECTED.has(stem) || isUnsafeFor(base,SAFETY_ROLES.DERIVED_BASE)) continue;
+      if(rule.notAfter&&rule.notAfter.some(k=>base.endsWith(k))) continue;
+      if(suffix==='부'&&isPlaceStem(base)) continue;   // 전주부 = 全州府, not 部
+      let out=rule.reading;
+      if(rule.after){
+        const prev=Object.keys(rule.after).find(k=>base.endsWith(k)&&base.length>k.length);   // 국가정보+원, never bare 정보원
+        if(prev) out=rule.after[prev];
+      }
+      if(!out) continue;
+      // Competing split: the last base syllable + the head is a word and the rest of the base is a word too
+      // (사업자+금 vs 사업+자금): ambiguous, keep Hangul.
+      const bsyl=[...base], bridge=DICTIONARIES.get(bsyl[bsyl.length-1]+suffix), rest=bsyl.slice(0,-1).join('');
+      if(bridge&&['core','dominant','mit'].includes(bridge.source)&&
+        ((bsyl.length>=3&&!/[가-힣]/u.test(withoutTrace(()=>convertWithoutHeads(rest))))||
+         (bsyl.length===2&&HEAD_BASE_PREFIXES.has(rest)))) continue;   // 사업자+금 / 국제교류기+금, 부+재료, 전+작품
+      if(bsyl[bsyl.length-1]==='적') continue;   // 정기적+금 is 定期+積金, never 的+head
+      // A one-syllable prefix + a complete composition of the rest (다+종교+사회) competes with base + head (다종교사+회).
+      if(HEAD_BASE_PREFIXES.has(bsyl[0])&&!/[가-힣]/u.test(withoutTrace(()=>convertWithoutHeads(stem.slice(1))))) continue;
+      let c;
+      if(mode==='exact'){
+        const e=DICTIONARIES.get(base);
+        if(!e||!['core','dominant','mit'].includes(e.source)) continue;   // no STDICT / CC-KEDICT base (지원사 → 知院事)
+        c=lexicalConvert(base);
+      }else{
+        if(DICTIONARIES.get(base)) continue;   // a known word is never recomposed (삼위일체 is not 三位+一切)
+        c=genericCompose(base,true);
+      }
+      if(c===base || /[가-힣：]/u.test(c)) continue;
+      const output=c+out;
+      traceEvent('compound-head',{surface:stem,base,suffix,mode,output});
+      return output;
+    }
+    return null;
+  }
+  // Particle deferral decides with the v4.8 resolver (no heads, no dominant parts): 출판자본가는 stays 出版+資本家,
+  // not 出版資本+가.
+  function convertWithoutHeads(stem){
+    const saved=HEADS_ENABLED; HEADS_ENABLED=false;
+    try{ return convertDerived(stem); }finally{ HEADS_ENABLED=saved; }
   }
 
   function convertDerived(stem){
@@ -917,6 +1023,11 @@
         return output;
       }
     }
+
+    // v4.9 M1: a compound head after a known whole word (자동차용 → 自動車用) or a composed base (미래대응 + 처), tried
+    // only after generic composition has failed (한국사회 stays 韓国+社会, never 韓国史+会).
+    const headed=compoundHead(stem,'exact')||compoundHead(stem,'composed');
+    if(headed) return headed;
 
     // v3.5: productive terminal forms. These operate on an already-safe
     // derived base. -표 is read as 表 in compound-final position; native
@@ -1071,14 +1182,32 @@
     return stem;
   }
 
+  // v4.9: first try every split without compound heads, so 관련학과의 is 関連学科+의 (not 関連学+과의); then with heads.
   function splitKnownParticleForm(token){
+    if(!HEADS_ENABLED) return splitKnownParticleFormPass(token);
+    HEADS_ENABLED=false;
+    let r;
+    try{ r=withoutTrace(()=>splitKnownParticleFormPass(token)); }finally{ HEADS_ENABLED=true; }
+    if(r) return splitKnownParticleFormPass(token,r[1]);
+    return splitKnownParticleFormPass(token);
+  }
+  // A stem that converts only through a compound head, whose head + the particle's first syllable is a word
+  // (관련학+과의: 학과), is not split there.
+  function headSwallowsParticle(stem,p){
+    if(!HEADS_ENABLED) return false;
+    const e=DICTIONARIES.get(stem.slice(-1)+p[0]);
+    if(!e||!['core','dominant','mit'].includes(e.source)) return false;
+    return withoutTrace(()=>convertWithoutHeads(stem))===stem;
+  }
+  function splitKnownParticleFormPass(token,only=null){
     if(isUnsafeFor(token,SAFETY_ROLES.PARTICLE_STEM)) return null;
     // Crucial v0.9 rule: do not strip a particle merely because the remainder happens
     // to be a dictionary word. Known ambiguous stems can be protected in protected.tsv.
     for(const p of PARTICLES){
-      if(token.length<=p.length || !token.endsWith(p)) continue;
+      if(token.length<=p.length || !token.endsWith(p) || (only&&p!==only)) continue;
       const stem=token.slice(0,-p.length);
       if(isUnsafeFor(stem,SAFETY_ROLES.PARTICLE_STEM)) continue;
+      if(headSwallowsParticle(stem,p)) continue;
       const converted=convertDerived(stem);
       if(converted!==stem){
         traceEvent('particle-strip',{surface:token,stem,particle:p,output:converted+p});
@@ -1086,7 +1215,7 @@
       }
     }
     for(const p of EXTRA_PARTICLES){
-      if(token.length<p.length+2 || !token.endsWith(p)) continue;
+      if(token.length<p.length+2 || !token.endsWith(p) || (only&&p!==only)) continue;
       const stem=token.slice(0,-p.length);
       if(isUnsafeFor(stem,SAFETY_ROLES.PARTICLE_STEM) || !extraStemOk(stem,p)) continue;
       // 시위대로 is 시위대+로 (protesters), not 시위+대로: leave 대로 when stem+대 is itself a word.

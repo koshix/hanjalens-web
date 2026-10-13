@@ -5,5 +5,5 @@
   root.HanjaLensVersion=value;
 })(typeof globalThis!=='undefined'?globalThis:this,function(){
   'use strict';
-  return Object.freeze({version:'4.8',label:'v4.8'});
+  return Object.freeze({version:'4.9',label:'v4.9'});
 });

@@ -1,6 +1,6 @@
 // GENERATED FILE. Edit data/examples.tsv and run: node scripts/build-examples.mjs
 (function(root,factory){const d=factory();if(typeof module!=="undefined"&&module.exports)module.exports=d;root.HanjaLensExamples=d;})(typeof globalThis!=="undefined"?globalThis:this,function(){return {
-  "version": "4.8",
+  "version": "4.9",
   "examples": [
     {
       "id": "ex001",
@@ -2001,7 +2001,7 @@
       "id": "ex286",
       "category": "science-earth-environment-v2.3.1",
       "input": "해양 수질을 보호하려면 플라스틱 폐기물과 오염 물질의 유출을 줄여야 한다.",
-      "expected": "海洋 水質을 保護하려면 プラスチック 폐기물과 오염 物質의 流出을 줄여야 한다.",
+      "expected": "海洋 水質을 保護하려면 プラスチック 廃棄物과 오염 物質의 流出을 줄여야 한다.",
       "translation": "海洋の水質を守るには、プラスチック廃棄物と汚染物質の流出を減らさなければならない。"
     },
     {
