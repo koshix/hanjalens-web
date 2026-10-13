@@ -646,6 +646,37 @@
   // v4.5 second attempt (docs/V45-SECOND-ATTEMPT-PREREGISTRATION.md): fixed phrases in which a frequent dominant word has
   // its other reading (장관을 이루다 = 壮観, 외교적 수사 = 修辞, 기지를 발휘 = 機智, 조화를 보내다 = 弔花 …). The word stays in
   // Hangul there (hold-only). self: the word with an optional particle; prev / next: the neighbouring words (Hangul only).
+  // v4.7 composition guard (docs/V47-CYCLE-PREREGISTRATION.md). Applied to generic and partial composition only.
+  // A non-initial part that is really a verb ending / particle sequence (성숙하진 → 河津, 해설진에 → 瞋恚, 원인가요 → 歌謡)
+  // refuses the composition (hold-only).
+  const COMPOSITION_GRAMMAR_PARTS=new Set(('하여 하진 하고 하며 하면 하게 하지 한다 해야 했다 군요 이요 이야 이며 이고 이다 '+
+    '기와 이랑 진에 에서 여야 도록 수록 거나 는데 지만 이지 이죠 이라 이나 하니 하던 하는 이었 였다 이기 가며 이여 이에 '+
+    '하심 하시 하신 하실 하셨 하세').split(' '));
+  // 한/할 nouns that do not start an adnominal ending (속도한계, 북방한계선, 생산할당량).
+  const COMPOSITION_ADNOMINAL_EXEMPT=new Set(['한계','한계선','할당','할당량']);
+  // Readings of a part that depend on its position in a compound (지구 → 地区 after another word, 대표이사 → 理事).
+  // output null: hold the whole composition. prevPlace: the previous part is an administrative place name.
+  const COMPOSITION_POSITION_READINGS=[
+    {part:'지구',nonInitial:true,output:'地区'},
+    {part:'대전',prev:/^(?:세계|고교|중일|독소|태평양|일차|이차)$/u,output:'大戦'},
+    {part:'대전',nonInitial:true,output:null},
+    {part:'이사',nonInitial:true,output:'理事'},
+    {part:'시장',prevPlace:true,output:'市長'},
+    {part:'시장',prev:/^명예$/u,output:'市長'},
+    {part:'과정',prev:/(?:석사|박사|학사)$/u,output:'課程'},
+    {part:'거리',prev:/^(?:시간|이동|비행|주행|최단|직선|평균|제동|가시|초점|통근|단|장)$/u,output:'距離'},
+    {part:'거리',nonInitial:true,output:null},
+    {part:'대상',prev:/^(?:영화|가요|연기|음악|문학|방송|연예)$/u,output:'大賞'},
+    {part:'연구원',last:true,first:/^(?:한국|국립)$/u,output:'研究院'},
+    {part:'구조',next:/^(?:활동|장비|대|작업|요청|현장)$/u,output:'救助'},
+    {part:'의사',next:/^결정/u,output:'意思'}
+  ];
+  // v4.7: a noun whose 하다-predicate has a different Hanja (기술하다 = 記述, 행사하다 = 行使) or is a native word
+  // (궁금하다, 차분하다). Applied only before a verbal ending (하/했/한/해/할/함/합/되/된 …). null: keep Hangul.
+  const PREDICATE_READINGS=new Map(Object.entries({
+    기술:'記述',행사:'行使',의지:'依支',지대:'至大',이전:'移転',시청:'視聴',구조:'救助',안주:'安住',일정:'一定',
+    인도:null,수상:null,궁금:null,차분:null,우람:null,두말:null,장만:null,아슬아슬:null
+  }));
   const DOMINANT_CONTEXT_HOLDS=[
     {word:'장관',self:/^장관(?:을|이)?$/u,next:/^(?:이루|이룬|이뤄|연출|펼쳐|자아)/u},
     {word:'장관',self:/^장관(?:이다|이었다|이었고|이었지만)$/u},
@@ -1231,6 +1262,10 @@ const ROMANIZATION_COMPOUNDS={'민주공화국':['민주','공화국']};
     SAFE_FORMS,
     DOMINANT_NO_VERBAL,
     DOMINANT_CONTEXT_HOLDS,
+    COMPOSITION_GRAMMAR_PARTS,
+    COMPOSITION_ADNOMINAL_EXEMPT,
+    PREDICATE_READINGS,
+    COMPOSITION_POSITION_READINGS,
     DOMINANT_NAME_TITLES_V45,
     DOMINANT_PERSON_TITLES_2,
     DOMINANT_TITLE_GAP,

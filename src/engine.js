@@ -42,6 +42,10 @@
   const PLACE_PRONE=new Set(DATA.dominantPlaceProne||[]);
   const SAME_HANJA_NAMES=new Set(DATA.dominantSameHanjaNames||[]);
   const DOMINANT_CONTEXT_HOLDS=RULES.DOMINANT_CONTEXT_HOLDS||[];
+  const COMPOSITION_GRAMMAR_PARTS=RULES.COMPOSITION_GRAMMAR_PARTS||new Set();
+  const PREDICATE_READINGS=RULES.PREDICATE_READINGS||new Map();
+  const COMPOSITION_ADNOMINAL_EXEMPT=RULES.COMPOSITION_ADNOMINAL_EXEMPT||new Set();
+  const COMPOSITION_POSITION_READINGS=RULES.COMPOSITION_POSITION_READINGS||[];
   const DOMINANT_GRAMMAR_HOLDS=new Set((DATA.dominantGrammarHolds||'').split(' ').filter(Boolean));
   const DOMINANT_NAME_HOLDS=DATA.dominantNameHolds||[];
   const PARTICLES_BY_LENGTH=[...PARTICLES].sort((a,b)=>b.length-a.length);
@@ -607,6 +611,46 @@
     return COMPOSE_TAIL_PARTICLE_SYLLABLES.has(syl[0]) || COMPOSE_TAIL_NOUN_SUFFIXES.has(syl[0]);
   }
 
+  // v4.7 composition guard: refuse a segmentation that splits a verb ending or an adnominal 한/할 into a dictionary part
+  // (가능한자세하게 → 可能漢字…), and apply position-dependent readings of a part (보존지구 → 地区). Returns null to refuse.
+  const isPlaceStem=x=>PLACE_NAMES.has(x)||['시','군','구','광역시','특별시'].some(t=>PLACE_NAMES.has(x+t));
+  function guardComposition(parts,stage,surface){
+    const known=p=>p&&p.type!=='unknown';
+    for(let i=1;i<parts.length;i++){
+      const p=parts[i];
+      if(!known(p)) continue;
+      if(COMPOSITION_GRAMMAR_PARTS.has(p.surface)||
+        (/^[한할]/u.test(p.surface)&&known(parts[i-1])&&!COMPOSITION_ADNOMINAL_EXEMPT.has(p.surface))){
+        traceEvent('composition-guard',{surface,stage,reason:'grammar-part',part:p.surface});
+        return null;
+      }
+    }
+    const out=[];
+    for(let i=0;i<parts.length;i++){
+      let p=parts[i];
+      if(known(p)){
+        for(const r of COMPOSITION_POSITION_READINGS){
+          if(r.part!==p.surface) continue;
+          if(r.nonInitial&&i===0) continue;
+          if(r.last&&i!==parts.length-1) continue;
+          if(r.prevPlace&&!(i>0&&isPlaceStem(parts[i-1].surface))) continue;
+          if(r.prev&&!(i>0&&r.prev.test(parts[i-1].surface))) continue;
+          if(r.next&&!(i+1<parts.length&&r.next.test(parts[i+1].surface))) continue;
+          if(r.first&&!r.first.test(parts[0].surface)) continue;
+          if(r.output===null){
+            traceEvent('composition-guard',{surface,stage,reason:'position-hold',part:p.surface});
+            return null;
+          }
+          traceEvent('composition-position-reading',{surface,stage,part:p.surface,output:r.output});
+          p={...p,output:r.output};
+          break;
+        }
+      }
+      out.push(p);
+    }
+    return out;
+  }
+
   // v3.5 generic composition.
   //
   // This is deliberately below exact lexical layers and reviewed compounds.
@@ -735,6 +779,9 @@
       traceEvent('composition-guard',{surface,stage:'generic'});
       return surface;
     }
+    const guarded=guardComposition(best.parts,'generic',surface);
+    if(!guarded) return surface;
+    best.parts=guarded;
 
     const output=best.parts.map(x=>x.output).join('');
     traceEvent('generic-composition',{
@@ -944,6 +991,12 @@
       if(DOMINANT_NO_VERBAL.has(k) && DICTIONARIES.get(k)?.source==='dominant') continue;
       const safeVerb=VERBAL_EXACT.has(rest) || VERBAL_PREFIXES.some(p=>rest.startsWith(p));
 
+      if(safeVerb && PREDICATE_READINGS.has(k) && !/^하[에의]/u.test(rest)){
+        const reading=PREDICATE_READINGS.get(k);
+        traceEvent('predicate-reading',{surface:stem,base:k,rest,output:reading?reading+rest:stem});
+        if(!reading) return stem;
+        return reading+rest;
+      }
       if(
         safeVerb ||
         DERIVATIONAL_SUFFIXES.has(rest)
@@ -1094,6 +1147,9 @@
       traceEvent('composition-guard',{surface,stage:'partial'});
       return surface;
     }
+    const guarded=guardComposition(best.parts,'partial',surface);
+    if(!guarded) return surface;
+    best.parts=guarded;
 
     const output=best.parts.map(x=>x.output).join('');
     traceEvent('partial-composition',{
