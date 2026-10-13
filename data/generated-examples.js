@@ -1,6 +1,6 @@
 // GENERATED FILE. Edit data/examples.tsv and run: node scripts/build-examples.mjs
 (function(root,factory){const d=factory();if(typeof module!=="undefined"&&module.exports)module.exports=d;root.HanjaLensExamples=d;})(typeof globalThis!=="undefined"?globalThis:this,function(){return {
-  "version": "4.7",
+  "version": "4.8",
   "examples": [
     {
       "id": "ex001",
@@ -1455,7 +1455,7 @@
       "id": "ex208",
       "category": "realtext-domain-v2.2",
       "input": "영양 균형을 고려한 급식 메뉴가 새롭게 편성되었다.",
-      "expected": "栄養 均衡을 考慮한 給食 メニュー가 새롭게 편성되었다.",
+      "expected": "栄養 均衡을 考慮한 給食 メニュー가 새롭게 編成되었다.",
       "translation": "栄養バランスを考慮した給食メニューが新たに編成された。"
     },
     {
@@ -1574,7 +1574,7 @@
       "id": "ex225",
       "category": "realtext-domain-v2.2",
       "input": "데이터 분석 역량이 기업 경쟁력의 핵심 요소로 부상하고 있다.",
-      "expected": "データ 分析 역량이 企業 競争力의 核心 要素로 浮上하고 있다.",
+      "expected": "データ 分析 力量이 企業 競争力의 核心 要素로 浮上하고 있다.",
       "translation": "データ分析能力が企業競争力の核心要素として浮上している。"
     },
     {
@@ -2022,7 +2022,7 @@
       "id": "ex289",
       "category": "science-earth-environment-v2.3.1",
       "input": "도시의 기온 상승을 줄이기 위해 공원과 녹지 공간을 확대하는 방법이 연구되고 있다.",
-      "expected": "都市의 気温 上昇을 줄이기 위해 公園과 녹지 空間을 拡大하는 方法이 研究되고 있다.",
+      "expected": "都市의 気温 上昇을 줄이기 위해 公園과 緑地 空間을 拡大하는 方法이 研究되고 있다.",
       "translation": "都市の気温上昇を抑えるため、公園や緑地空間を拡大する方法が研究されている。"
     },
     {

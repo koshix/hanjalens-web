@@ -33,6 +33,24 @@
     MIXED_PREFIX_RULES,JAPANESE_DISPLAY_OVERRIDES,SAFE_FORMS
   }=RULES;
   const DOMINANT_NO_VERBAL=RULES.DOMINANT_NO_VERBAL||new Set();
+  // v4.8 (recall): extra particles/endings, tried only after the older ones and only on stems of 2+ syllables.
+  const EXTRA_PARTICLES=RULES.EXTRA_PARTICLES_V48||[];
+  const EXTRA_COPULA=RULES.EXTRA_COPULA_V48||[];
+  const EXTRA_CONTRACTED_COPULA=RULES.EXTRA_CONTRACTED_COPULA_V48||[];
+  const EXTRA_VERBAL=RULES.EXTRA_VERBAL_V48||new Set();
+  const EXTRA_BLOCKS=RULES.EXTRA_ENDING_BLOCKS_V48||[];
+  // A stem may take an extra ending only when it is itself a whole word from the hand-reviewed core list or the MIT
+  // list (or a loanword, or a dominant word before a 2+ syllable ending). STDICT entries and compositions are too often
+  // a verb stem or a native word (일어나 = 日語나, 태어나 = 駄魚나, 별로임 = 別路임), so they never do.
+  function extraStemOk(stem,ending){
+    if([...stem].length<2) return false;
+    if(EXTRA_BLOCKS.some(([b,e])=>stem===b&&ending.startsWith(e))) return false;
+    if(LOAN[stem]) return true;
+    const e=getHanjaEntry(stem);
+    if(!e) return false;
+    if(e.source==='core'||e.source==='mit') return true;
+    return e.source==='dominant'&&[...ending].length>=2;
+  }
   const DOMINANT_PARTICLE_FINALS=RULES.DOMINANT_PARTICLE_FINALS||new Set();
   const DOMINANT_NAME_TITLES=new Set([...(RULES.DOMINANT_NAME_TITLES||[]),...(RULES.DOMINANT_NAME_TITLES_V45||[])]);
   const DOMINANT_PERSON_TITLES_2=RULES.DOMINANT_PERSON_TITLES_2||new Set();
@@ -60,7 +78,7 @@
   // Provenance-aware dictionary storage is isolated from conversion logic.
   // v4.3: 'dominant' is the built-in layer of reviewed dominant-reading homographs (data/v43-dominant-accepted.tsv).
   // It is registered at start-up and treated like the runtime layers (not as core) by every guard below.
-  const DOMINANT=Object.freeze({...(DATA.dominant||{})});
+  const DOMINANT=Object.freeze({...(DATA.dominant||{}),...(DATA.dominantExt||{})});
   const DICTIONARIES=DICTIONARY_REGISTRY.createRegistry(HANJA,{
     layerOrder:['dominant','mit','cc-kedict','stdict']
   });
@@ -71,12 +89,18 @@
     if(DOMINANT_CTX.numericBefore){
       const ch=[...surface];
       if(DOMINANT_PARTICLE_FINALS.has(ch[ch.length-1])) return true;
+      // v4.8: after a number, a word starting with a number word is the number (3백조 = 300 trillion, not 3白鳥).
+      // v4.8 second attempt: also the counter 개 (16개교 = 16 schools, not 16開校; first blind, No.62–64).
+      if(/^[십백천만억조개]/u.test(surface)) return true;
     }
     return false;
   }
+  const REVIEWED_NO_FALLBACK=new Set(DATA.reviewedNoFallback||[]);
+  const DOMINANT_NO_PRODUCTIVE=new Set(Object.keys(DATA.dominantExt||{}));
   const getHanjaEntry=surface=>{
     const e=DICTIONARIES.get(surface);
-    return e&&e.source==='dominant'&&dominantBlocked(surface) ? DICTIONARIES.get(surface,'dominant') : e;
+    if(e&&e.source==='dominant'&&dominantBlocked(surface)) return REVIEWED_NO_FALLBACK.has(surface) ? null : DICTIONARIES.get(surface,'dominant');
+    return e;
   };
   // v4.3: a dominant-reading entry is a whole-word decision. It never serves as a piece of generic or partial
   // composition (일수록 is not 日数+록, 일주일 is not 一周+일).
@@ -92,7 +116,9 @@
     }
     return false;
   }
-  const getComponentEntry=surface=>DICTIONARIES.get(surface,'dominant');
+  // v4.8 ③: a reviewed formerly-protected word stays out of composition, as it was while protected (otherwise MIT 房門
+  // would enter 현장방문 → 現場房門).
+  const getComponentEntry=surface=>REVIEWED_NO_FALLBACK.has(surface)?undefined:DICTIONARIES.get(surface,'dominant');
   const allHanjaKeys=()=>DICTIONARIES.allKeys();
   const dictionarySize=()=>DICTIONARIES.size();
 
@@ -676,6 +702,12 @@
       const convertedStem=convertDerived(particleStem);
       if(convertedStem!==particleStem) return surface;
     }
+    for(const p of EXTRA_PARTICLES){
+      if(surface.length<p.length+2 || !surface.endsWith(p)) continue;
+      const particleStem=surface.slice(0,-p.length);
+      if(isUnsafeFor(particleStem,SAFETY_ROLES.PARTICLE_STEM) || !extraStemOk(particleStem,p)) continue;
+      if(convertDerived(particleStem)!==particleStem) return surface;
+    }
 
     const chars=[...surface];
     const n=chars.length;
@@ -842,7 +874,10 @@
     const productive=[['자','者'],['성','性'],['적','的'],['화','化']];
     for(const [suffix,out] of productive){
       if(stem.length<=suffix.length||!stem.endsWith(suffix)) continue;
+      // v4.8: a protected whole word is never rebuilt from its base (지원자 stays Hangul even though 지원 → 支援).
+      if(PROTECTED.has(stem)) break;
       const base=stem.slice(0,-suffix.length);
+      if(DOMINANT_NO_PRODUCTIVE.has(base)&&DICTIONARIES.get(base)?.source==='dominant') continue;
       if(isUnsafeFor(base,SAFETY_ROLES.DERIVED_BASE)) continue;
       const c=lexicalConvert(base);
       if(c!==base){
@@ -967,6 +1002,29 @@
       }
     }
 
+    // v4.8: extra copula endings, on a known noun of 2+ syllables (dominant nouns only with 2+ syllable endings;
+    // contracted forms never for dominant nouns, as above).
+    for(const [list,contracted] of [[EXTRA_COPULA,false],[EXTRA_CONTRACTED_COPULA,true]]){
+      for(const suffix of list){
+        if(stem.length<suffix.length+2 || !stem.endsWith(suffix)) continue;
+        const noun=stem.slice(0,-suffix.length);
+        if(isUnsafeFor(noun,SAFETY_ROLES.DERIVED_BASE) || !extraStemOk(noun,suffix)) continue;
+        if(contracted && !hasNoFinalConsonantHangul(noun)) continue;
+        const hanjaEntry=getHanjaEntry(noun);
+        if(hanjaEntry){
+          if(hanjaEntry.source==='dominant' && (contracted || [...suffix].length<2 || dominantShadowed(stem,noun))) continue;
+          const output=hanjaEntry.output+suffix;
+          traceEvent('copula-v48',{surface:stem,noun,suffix,output,source:hanjaEntry.source});
+          return output;
+        }
+        if(LOAN[noun]){
+          const output=LOAN[noun]+suffix;
+          traceEvent('copula-v48',{surface:stem,noun,suffix,output});
+          return output;
+        }
+      }
+    }
+
     // Productive noun + 받다, but only for explicitly reviewed safe bases.
     // This stays separate from VERBAL_PREFIXES so 받다 never becomes a global suffix.
     for(const base of RECEIVE_PASSIVE_BASES){
@@ -989,7 +1047,7 @@
       if(!rest) continue;
       if(dominantShadowed(stem,k)) continue;
       if(DOMINANT_NO_VERBAL.has(k) && DICTIONARIES.get(k)?.source==='dominant') continue;
-      const safeVerb=VERBAL_EXACT.has(rest) || VERBAL_PREFIXES.some(p=>rest.startsWith(p));
+      const safeVerb=VERBAL_EXACT.has(rest) || VERBAL_PREFIXES.some(p=>rest.startsWith(p)) || (EXTRA_VERBAL.has(rest) && extraStemOk(k,rest));
 
       if(safeVerb && PREDICATE_READINGS.has(k) && !/^하[에의]/u.test(rest)){
         const reading=PREDICATE_READINGS.get(k);
@@ -1024,6 +1082,18 @@
       const converted=convertDerived(stem);
       if(converted!==stem){
         traceEvent('particle-strip',{surface:token,stem,particle:p,output:converted+p});
+        return [converted,p];
+      }
+    }
+    for(const p of EXTRA_PARTICLES){
+      if(token.length<p.length+2 || !token.endsWith(p)) continue;
+      const stem=token.slice(0,-p.length);
+      if(isUnsafeFor(stem,SAFETY_ROLES.PARTICLE_STEM) || !extraStemOk(stem,p)) continue;
+      // 시위대로 is 시위대+로 (protesters), not 시위+대로: leave 대로 when stem+대 is itself a word.
+      if(p==='대로' && convertDerived(stem+'대')!==stem+'대') continue;
+      const converted=convertDerived(stem);
+      if(converted!==stem){
+        traceEvent('particle-strip-v48',{surface:token,stem,particle:p,output:converted+p});
         return [converted,p];
       }
     }

@@ -697,12 +697,27 @@
     {word:'경보',prev:/^(?:남자|여자|남녀)$/u},
     {word:'유학',next:/^(?:사상|경전|이념|자|자들|자의|적)/u},
     {word:'유학',prev:/^(?:성리학|조선|공자|불교와|도교와)/u},
-    {word:'주석',self:/^주석(?:이|을)$/u,next:/^(?:달|붙)/u}
+    {word:'주석',self:/^주석(?:이|을)$/u,next:/^(?:달|붙)/u},
+    // v4.8 ③ (Koshix 2026-10-13): reviewed formerly-protected words; these contexts stay in Hangul.
+    {word:'지원',self:/^지원(?:자|서)/u},
+    // 대마도 is the island 対馬島 (Tsushima), not 大麻+도.
+    {word:'대마',self:/^대마도/u},
+    // 선제에게 / 선제께 is a person (宣帝, a Han emperor), not 先制.
+    {word:'선제',self:/^선제(?:에게|께|의\s*명)/u},
+    {word:'지원',next:/^여부/u},
+    {word:'조사',next:/^여부/u},
+    // 방문 = 房門 (door of a room) before door verbs/nouns (방문을 닫았다, 방문 앞에서).
+    {word:'방문',next:/^(?:닫|열|두드|잠그|잠갔|잠긴|잠가|앞|밖|틈|손잡이|고리|너머)/u},
+    {word:'지원',self:/^지원(?:하|했|한|할|해)/u,prev:/(?:대학|대학원|학교|회사|기업|직장|채용|공모|모집|부서|학과|군)에$/u},
+    {word:'조사',next:/^(?:와|과|나|및)?\s*(?:어미|접사|품사|어간)/u},
+    {word:'조사',prev:/(?:격|보조사|보조|접속|부사격|주격|목적격|관형격|서술격|호격|문법|품사)$/u},
+    {word:'항의',prev:/(?:\d|조)$/u}
   ];
 
   // v4.3: dominant-reading nouns whose 하다 forms usually mean something else (시기하다 = to envy, 초연하다 = aloof);
   // the noun converts, the 하다 forms stay in Hangul. Reviewed after the v4.3 re-screen of the random sample.
-  const DOMINANT_NO_VERBAL=new Set(['시기','초연']);
+  // v4.8: 사절하다 = 謝絶, 매점하다 = 買占 (UD audit chunk 2).
+  const DOMINANT_NO_VERBAL=new Set(['시기','초연','사절','매점','생가','아연','실화']);
 
   const PARTICLES=['으로부터','로부터','만으로는','에게서는','에게서도','에게는','에게도','에서는','에서도','에는','에도','으로는','로서는','으로서','로서','으로도','로도','와의','과의','에서','에게서','에게','한테','으로','로','까지','부터','보다','처럼','만큼','하고','와','과','의','은','는','이','가','을','를','에','도','만','뿐'];
   const COPULA_SUFFIXES=['인가요','이라고는','이라는','이라고','이라면','이라도','이라고요','이에요','예요','입니다','이다','이었다','였어요','이었어요','이고','이며','이면','이세요','인','일'];
@@ -710,6 +725,26 @@
   const VERBAL_EXACT=new Set(['하다','해요','했다','합니다','하고','하는','해서','하면','한','할','함','하기','하나요','하세요','한다','했습니다','하겠습니다','할까요','하지','하지는','하지도','되다','되어','돼요','됐다','된다','됩니다','되고','되는','돼서','되면','된','될','되지','되지는','되도록','시키다','시켜요','시켰다','시킵니다','시키고','시키는','시키면','시킨','시킬']);
   const VERBAL_PREFIXES=['하','해','했','합','됩','되','돼','됐','시키','시켜','시켰','시킵','스럽','스러'];
   const DERIVATIONAL_SUFFIXES=new Set(['히']);
+
+  // v4.8 (recall): particles and endings that were missing, so a known noun before them stayed in Hangul
+  // (상태나, 순서대로, 기술로는, 후보라는, 소속이었던 …). They are tried only after every older particle/ending has
+  // failed, and only on a stem that converts by itself; they never open compound segmentation.
+  const EXTRA_PARTICLES_V48=['이나','나','대로','로는','보다는','보다도','에서의','까지의','엔','에선','과는','와는','에만',
+    '만이','만은','만을','만의','까지는','까지도','으로써','로써','마다','마저','조차','만으로','으로만','로만','과도','와도',
+    '으로서의','로서의','이랑','랑','이란','란','이야말로','야말로','에게만','에서만','으로의','로의','에서부터'];
+  // Stem + extra ending pairs that are other words (차이나 = China, 구축함 = destroyer, 모자라다 / 생기다 are verbs).
+  const EXTRA_ENDING_BLOCKS_V48=[['차이','나'],['구축','함'],['모자','라'],['생기',''],['주거','나'],['영화','로'],['신선','']];
+  // Noun + copula endings (any final consonant).
+  const EXTRA_COPULA_V48=['이라','이라며','이라서','이라는데','이었던','이었고','이었지만','이었으나','이던','이지만','이자',
+    '이어서','이기도','이기에','인지','인데','인데도','인지를','이네요','임','임을','임이','임에도','이기','이야','이어도',
+    '이면서','이므로','이니','이었는데'];
+  // Vowel-final noun + contracted copula endings (후보라는, 관계였던).
+  const EXTRA_CONTRACTED_COPULA_V48=['라','라며','라서','라는','라고','였던','였고','였지만','였으나','던','지만','여서','여도',
+    '면서','므로','니'];
+  // Noun + 하다/되다/롭다/답다/당하다 endings not covered by VERBAL_PREFIXES (which only match 하/해/했/합/되/돼/됐 …).
+  const EXTRA_VERBAL_V48=new Set(['한다고','한다는','한다며','한다면','한다는데','한다지만','한데','할지','할지가','할지는','할지를',
+    '할수록','함으로써','함에','함에도','함을','함이','됨에','됨을','됨으로써','롭게','로운','롭다','로워','로웠다','답게','다운',
+    '당했다','당하고','당한','당할','당해','당하는','당하자','당하면서']);
 
   // v4.0 Stage 3 Batch 1: positive proof data for the external-candidate
   // Morphological Firewall. These are not output blacklists.
@@ -1251,6 +1286,11 @@ const ROMANIZATION_COMPOUNDS={'민주공화국':['민주','공화국']};
     VERBAL_EXACT,
     VERBAL_PREFIXES,
     DERIVATIONAL_SUFFIXES,
+    EXTRA_PARTICLES_V48,
+    EXTRA_COPULA_V48,
+    EXTRA_CONTRACTED_COPULA_V48,
+    EXTRA_VERBAL_V48,
+    EXTRA_ENDING_BLOCKS_V48,
     RECEIVE_PASSIVE_BASES,
     FIREWALL_GRAMMATICAL_BASES,
     FIREWALL_PREDICATE_LEMMAS,
