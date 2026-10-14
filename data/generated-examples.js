@@ -1,6 +1,6 @@
 // GENERATED FILE. Edit data/examples.tsv and run: node scripts/build-examples.mjs
 (function(root,factory){const d=factory();if(typeof module!=="undefined"&&module.exports)module.exports=d;root.HanjaLensExamples=d;})(typeof globalThis!=="undefined"?globalThis:this,function(){return {
-  "version": "4.9",
+  "version": "5.0",
   "examples": [
     {
       "id": "ex001",
@@ -867,7 +867,7 @@
       "id": "ex124",
       "category": "realtext-general-v2",
       "input": "유전자 조작 기술의 발전으로 치료 가능성이 확대되고 있다.",
-      "expected": "遺伝子 조작 技術의 発展으로 治療 可能性이 拡大되고 있다.",
+      "expected": "遺伝子 操作 技術의 発展으로 治療 可能性이 拡大되고 있다.",
       "translation": "遺伝子操作技術の発展により、治療の可能性が広がっている。"
     },
     {
@@ -1714,7 +1714,7 @@
       "id": "ex245",
       "category": "art-entertainment-v2.3",
       "input": "국제 문학 행사는 여러 국가의 작가와 독자가 문화적 경험을 공유하는 기회를 제공한다.",
-      "expected": "国際 文学 行事는 여러 国家의 작가와 독자가 文化的 経験을 공유하는 機会를 提供한다.",
+      "expected": "国際 文学 行事는 여러 国家의 작가와 독자가 文化的 経験을 共有하는 機会를 提供한다.",
       "translation": "国際文学行事は、さまざまな国の作家と読者が文化的経験を共有する機会を提供する。"
     },
     {
@@ -1776,8 +1776,8 @@
     {
       "id": "ex254",
       "category": "science-physics-v2.3.1",
-      "input": "연구진은 새로운 장치를 이용해 미세한 진동의 주기와 속도를 분석했다.",
-      "expected": "研究陣：研究チーム은 새로운 装置를 利用해 미세한 진동의 주기와 速度를 分析했다.",
+      "input": "연구진은 새로운 장치를 이용해 미세한 振動의 주기와 속도를 분석했다.",
+      "expected": "研究陣：研究チーム은 새로운 装置를 利用해 미세한 振動의 주기와 速度를 分析했다.",
       "translation": "研究チームは新しい装置を使い、微細な振動の周期と速度を分析した。"
     },
     {
@@ -1840,14 +1840,14 @@
       "id": "ex263",
       "category": "science-chemistry-v2.3.1",
       "input": "상온에서 안정한 물질도 높은 온도에서는 다른 형태로 변화할 수 있다.",
-      "expected": "常温에서 안정한 物質도 높은 温度에서는 다른 形態로 変化할 수 있다.",
+      "expected": "常温에서 安定한 物質도 높은 温度에서는 다른 形態로 変化할 수 있다.",
       "translation": "常温で安定な物質でも、高温では別の形態に変化することがある。"
     },
     {
       "id": "ex264",
       "category": "science-chemistry-v2.3.1",
       "input": "배터리의 성능을 향상하려면 에너지 저장 재료와 충전 방식의 개선이 필요하다.",
-      "expected": "バッテリー의 性能을 向上하려면 エネルギー 저장 材料와 充電 方式의 改善이 必要하다.",
+      "expected": "バッテリー의 性能을 向上하려면 エネルギー 貯蔵 材料와 充電 方式의 改善이 必要하다.",
       "translation": "バッテリー性能を向上させるには、エネルギー貯蔵材料と充電方式の改善が必要である。"
     },
     {

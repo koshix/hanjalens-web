@@ -91,7 +91,8 @@
       if(DOMINANT_PARTICLE_FINALS.has(ch[ch.length-1])) return true;
       // v4.8: after a number, a word starting with a number word is the number (3백조 = 300 trillion, not 3白鳥).
       // v4.8 second attempt: also the counter 개 (16개교 = 16 schools, not 16開校; first blind, No.62–64).
-      if(/^[십백천만억조개]/u.test(surface)) return true;
+      // v5.0 UD audit: also 여 (20여분 = about 20 minutes, not 20余分).
+      if(/^[십백천만억조개여]/u.test(surface)) return true;
     }
     return false;
   }
@@ -125,6 +126,7 @@
   // v4.9 M1: head -> {reading} or {after:{last part of base: reading}} (data/v49-compound-heads.tsv via generated data).
   const COMPOUND_HEADS=Object.entries(DATA.compoundHeads||{});
   const DOMINANT_NO_COMPONENT=new Set(DATA.dominantNoComponent||[]);
+  const DOMINANT_NO_COMPONENT_BEFORE=DATA.dominantNoComponentBefore||{};
   const getFullComponentEntry=surface=>{
     const e=getComponentEntry(surface);
     if(e||!HEADS_ENABLED) return e;
@@ -809,9 +811,10 @@
     // A dominant composition never repeats a part (야금야금, 부지부지 are native reduplicated adverbs).
     const repeats=parts=>parts.some((x,i)=>i>0&&x.surface===parts[i-1].surface);
     // v4.9 second attempt: a dominant part right before 위원… is usually an abbreviation (원안위원장 = 원안위 위원장, not 原案).
+    const deniedBefore=parts=>parts.some((x,i)=>i+1<parts.length&&(DOMINANT_NO_COMPONENT_BEFORE[x.surface]||[]).some(k=>parts[i+1].surface.startsWith(k)));
     const abbrevBeforeCommittee=parts=>parts.some((x,i)=>x.source==='dominant'&&i+1<parts.length&&parts[i+1].surface.startsWith('위원'));
     const candidates=rec(0).filter(parts=>parts.length>=2&&!lastIsGrammar(parts)&&
-      !(repeats(parts)&&parts.some(x=>x.source==='dominant'))&&!abbrevBeforeCommittee(parts)&&
+      !(repeats(parts)&&parts.some(x=>x.source==='dominant'))&&!abbrevBeforeCommittee(parts)&&!(deniedBefore(parts)&&parts.some(x=>x.source==='dominant'))&&
       (!parts.some(x=>x.source==='dominant')||
         (parts.every(x=>DOMINANT_PART_PEERS.has(x.source||x.type)&&!DOMINANT_NO_COMPONENT.has(x.surface))&&!cutsKnownWord(parts)))&&
       (!strict||parts.every(x=>DOMINANT_PART_PEERS.has(x.source||x.type)||x.type==='loan'||
