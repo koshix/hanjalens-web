@@ -1,6 +1,6 @@
 // GENERATED FILE. Edit data/*.tsv and run: node scripts/build-data.mjs
 (function(root,factory){const d=factory();if(typeof module!=="undefined"&&module.exports)module.exports=d;root.HanjaLensData=d;})(typeof globalThis!=="undefined"?globalThis:this,function(){return {
-  "version": "5.0",
+  "version": "5.1",
   "hanja": {
     "가격": "価格",
     "가공식품": "加工食品",
@@ -13402,7 +13402,8 @@
     "다우": "v4.2 proper name (Dow) vs 多雨; hold",
     "신한": "v4.2 proper name (Shinhan) vs 宸翰; hold",
     "번의": "v4.2 grammar: 번(counter)+의; 翻意 only became unambiguous through glyph merging",
-    "지원자": "v4.8 ③: 지원 is 支援 by default, but 지원자 is usually 志願者 (applicant); hold (Koshix 2026-10-13)"
+    "지원자": "v4.8 ③: 지원 is 支援 by default, but 지원자 is usually 志願者 (applicant); hold (Koshix 2026-10-13)",
+    "어치": "v5.1: native suffix (3만원어치 = worth 30,000 won); STDICT 御歯 is wrong"
   },
   "phrases": [
     [
@@ -13976,7 +13977,48 @@
     "隸": "隷",
     "虛": "虚",
     "劃": "画",
-    "痲": "麻"
+    "痲": "麻",
+    "鍊": "錬",
+    "歲": "歳",
+    "禱": "祷",
+    "卽": "即",
+    "娛": "娯",
+    "絕": "絶",
+    "涉": "渉",
+    "尙": "尚",
+    "戶": "戸",
+    "焰": "焔",
+    "髥": "髯",
+    "戱": "戯",
+    "揷": "挿",
+    "啞": "唖",
+    "麴": "麹",
+    "醬": "醤",
+    "吳": "呉",
+    "姊": "姉",
+    "屛": "屏",
+    "囊": "嚢",
+    "繫": "繋",
+    "姬": "姫",
+    "瀆": "涜",
+    "俱": "倶",
+    "鷗": "鴎",
+    "剝": "剥",
+    "顚": "顛",
+    "郞": "郎",
+    "鄕": "郷",
+    "黑": "黒",
+    "栋": "棟",
+    "节": "節",
+    "寻": "尋",
+    "问": "問",
+    "贤": "賢",
+    "园": "園",
+    "进": "進",
+    "祸": "禍",
+    "论": "論",
+    "蛰": "蟄",
+    "淸": "清"
   },
   "jaForms": [
     [
@@ -14009,7 +14051,7 @@
     "dominant": 917,
     "dominantExt": 1512,
     "loanwords": 839,
-    "protected": 82,
+    "protected": 83,
     "phrases": 3,
     "mixed": 8
   }

@@ -644,10 +644,16 @@
     return Boolean(getHanjaEntry(bridge));
   }
   const PARTICLE_RUNS_ALL=new Set(PARTICLES);
+  // v5.1: common STDICT words that end in a particle syllable and are real last parts (변화추이, 정기항로).
+  const COMPOSE_TAIL_STDICT_ALLOW=new Set(['추이','항로','진로','통로','회로','수로','활로','경로','해로','선로','육로','공로']);
   function swallowsParticleTail(parts){
     const last=parts[parts.length-1];
     if(!last || last.type!=='runtime') return false;
     const syl=[...last.surface];
+    // v5.1: a two-syllable STDICT word as the last part that ends in a particle or copula syllable is usually the
+    // previous part's final syllable plus the particle (금융위가 → 金融胃家, 연구개발진이 → 研究開発珍異, 상당수다 → 相当数多).
+    if(syl.length===2 && last.source==='stdict' && !COMPOSE_TAIL_STDICT_ALLOW.has(last.surface) &&
+      (COMPOSE_TAIL_PARTICLE_SYLLABLES.has(syl[1])||syl[1]==='다')) return true;
     if(syl.length!==2 || !COMPOSE_TAIL_PARTICLE_SYLLABLES.has(syl[1])) return false;
     return COMPOSE_TAIL_PARTICLE_SYLLABLES.has(syl[0]) || COMPOSE_TAIL_NOUN_SUFFIXES.has(syl[0]);
   }
@@ -676,6 +682,7 @@
           if(r.last&&i!==parts.length-1) continue;
           if(r.prevPlace&&!(i>0&&isPlaceStem(parts[i-1].surface))) continue;
           if(r.prev&&!(i>0&&r.prev.test(parts[i-1].surface))) continue;
+          if(r.prevSino&&!(i>0&&parts[i-1].type!=='loan'&&parts[i-1].type!=='unknown')) continue;
           if(r.next&&!(i+1<parts.length&&r.next.test(parts[i+1].surface))) continue;
           if(r.first&&!r.first.test(parts[0].surface)) continue;
           if(r.output===null){

@@ -110,10 +110,20 @@
     {re:/(\d+)시(?=\s|$|[,.!?，。！？]|로|에|부터|까지)/gu,rep:'$1時'},
     {re:/몇 시(?=\s|$|[,.!?，。！？]|로|에|부터|까지)/gu,rep:'몇 時'},
     {re:/(\d+)년/gu,rep:'$1年'},
+    // v5.1 (new measure audit): fixed phrases with the other reading of a frequent word.
+    {re:/(?<=(?:반대|찬성|동의|거부|사퇴|출마|참여|매각|인수|복귀|협상|사의|불출마) )의사(?=를|가|는|도|\s|$)/gu,rep:'意思'},
+    {re:/의사(?=를 (?:밝|전|표명|표시|타진|내비|드러))/gu,rep:'意思'},
+    {re:/대상(?=을 (?:받|수상|차지|탔|거머))/gu,rep:'大賞'},
+    // 이전 = 移転 (relocation) after an organization or place, or before relocation words; elsewhere the default (以前) stays.
+    {re:/(?<=(?:기관|본사|청사|공장|사옥|본부|부처|공공기관|금융위|금감원|위원회|세종|지방|수도|해외|수도권|행정수도|공기업) )이전(?=(?:은|는|이|을|도|과|의|으로|하|했|한|할|해|되|된|돼|됐|될|\s|$|[,.·…"'’”)]))/gu,rep:'移転'},
+    {re:/이전(?= (?:대상|부지|비용|추진|방안|작업|공사|계획을 발표))/gu,rep:'移転'},
+    {re:/달러(?=어치)/gu,rep:'ドル'}, // v5.1: 어치 is protected; keep the currency before it
+    {re:/(예상|상상|기대)치(?= ?(?:못|않))/gu,rep:(m,w)=>({'예상':'予想','상상':'想像','기대':'期待'})[w]+'치'},
     {re:/(\d+年)\s+후(?=\s|$|[,.!?，。！？]|의|에|부터|까지)/gu,rep:'$1 後'},
     {re:/(\d+)월/gu,rep:'$1月'},
     {re:/(\d+)일/gu,rep:'$1日'},
-    {re:/(\d+)분/gu,rep:'$1分'},
+    {re:/(\d+)분기/gu,rep:'$1分期'}, // v5.1: after a digit 분기 is a quarter (分期), never 分岐
+    {re:/(\d+)분(?!기)/gu,rep:'$1分'}, // v5.1: 1분기 is a quarter (分期), not 1 minute
     // v4.2: number magnitudes and counters directly after Arabic digits (product decision 2026-10-08:
     // 174명 → 174名, 3억 원 → 3億 ウォン, 1만건 → 1万件). Magnitudes first, then 余, then counters.
     {re:/제(\d+)(조|항|호)(?=\s|$|[^가-힣]|의|에|를|을|은|는|이|가|와|과|및|부터|까지|에서)/gu,rep:(m,d,u)=>'第'+d+({'조':'条','항':'項','호':'号'})[u]},
@@ -234,10 +244,10 @@
     // v3.2 Fresh corpus v2 batch 1.
     // Bare forms stay protected; only reviewed contexts select a reading.
     // 전자: 電子 vs 前者.
-    {re:/전자(?=(?:문서|체온계))/gu,rep:'電子'},
-    {re:/전자\s+(방식|문서|기기|제품|기록|장치|정보|결재|체온계)(?=\s|$|[,.!?，。！？]|을|를|이|가|은|는|에|의|로|으로)/gu,rep:'電子 $1'},
-    {re:/전자(?=(?:와|보다)\s+후자)/gu,rep:'前者'},
-    {re:/전자(?=의\s+(방식|사례|설명|의견|방안))/gu,rep:'前者'},
+    {re:/(?<![가-힣])전자(?=(?:문서|체온계))/gu,rep:'電子'},
+    {re:/(?<![가-힣])전자\s+(방식|문서|기기|제품|기록|장치|정보|결재|체온계)(?=\s|$|[,.!?，。！？]|을|를|이|가|은|는|에|의|로|으로)/gu,rep:'電子 $1'},
+    {re:/(?<![가-힣])전자(?=(?:와|보다)\s+후자)/gu,rep:'前者'},
+    {re:/(?<![가-힣])전자(?=의\s+(방식|사례|설명|의견|방안))/gu,rep:'前者'},
 
     // 조회: 照会 vs 朝会.
     {re:/(성적|成績|신분|신원|잔액|배송|기록|내역|정보)\s+조회(?=\s|$|[,.!?，。！？]|를|가|는|의|에|하|되)/gu,rep:'$1 照会'},
@@ -669,7 +679,11 @@
     {part:'대상',prev:/^(?:영화|가요|연기|음악|문학|방송|연예)$/u,output:'大賞'},
     {part:'연구원',last:true,first:/^(?:한국|국립)$/u,output:'研究院'},
     {part:'구조',next:/^(?:활동|장비|대|작업|요청|현장)$/u,output:'救助'},
-    {part:'의사',next:/^결정/u,output:'意思'}
+    {part:'의사',next:/^결정/u,output:'意思'},
+    // v5.1: 이전 as the last part of a compound is a relocation (지방이전, 본사이전); X연구원 after a field noun is an institute.
+    {part:'이전',last:true,nonInitial:true,output:'移転'},
+    {part:'연구원',last:true,nonInitial:true,prevSino:true,prev:/^(?!(?:책임|수석|선임|주임|객원|특별|박사|상급|전문|초빙|인턴|연구|위촉|명예|방문|파견|전임|부|정|보조|학생|외부|현직|대학원)$)/u,output:'研究院'},
+    {part:'감독원',last:true,prev:/^금융$/u,output:'監督院'}
   ];
   // v4.7: a noun whose 하다-predicate has a different Hanja (기술하다 = 記述, 행사하다 = 行使) or is a native word
   // (궁금하다, 차분하다). Applied only before a verbal ending (하/했/한/해/할/함/합/되/된 …). null: keep Hangul.
@@ -678,7 +692,7 @@
     인도:null,수상:null,궁금:null,차분:null,우람:null,두말:null,장만:null,아슬아슬:null
   }));
   const DOMINANT_CONTEXT_HOLDS=[
-    {word:'장관',self:/^장관(?:을|이)?$/u,next:/^(?:이루|이룬|이뤄|연출|펼쳐|자아)/u},
+    {word:'장관',self:/^장관(?:을|이)?$/u,next:/^(?:이루|이룬|이뤄|연출|펼쳐|자아|선사)/u},
     {word:'장관',self:/^장관(?:이다|이었다|이었고|이었지만)$/u},
     {word:'수사',prev:/^(?:외교적|정치적|화려한|과장된|수사학적|미사여구)/u},
     {word:'수사',self:/^수사(?:에|일|로)$/u,next:/^(?:불과|그치|그쳤|뿐)/u},
