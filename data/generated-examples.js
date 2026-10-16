@@ -1,6 +1,6 @@
 // GENERATED FILE. Edit data/examples.tsv and run: node scripts/build-examples.mjs
 (function(root,factory){const d=factory();if(typeof module!=="undefined"&&module.exports)module.exports=d;root.HanjaLensExamples=d;})(typeof globalThis!=="undefined"?globalThis:this,function(){return {
-  "version": "5.1",
+  "version": "5.2",
   "examples": [
     {
       "id": "ex001",
@@ -1350,7 +1350,7 @@
       "id": "ex193",
       "category": "realtext-domain-v2.2",
       "input": "조기 진단을 통해 치료 성공률을 높일 수 있다.",
-      "expected": "조기 診断을 통해 治療 성공률을 높일 수 있다.",
+      "expected": "조기 診断을 통해 治療 成功率을 높일 수 있다.",
       "translation": "早期診断によって治療成功率を高めることができる。"
     },
     {
@@ -1377,8 +1377,8 @@
     {
       "id": "ex197",
       "category": "realtext-domain-v2.2",
-      "input": "수술 후 합병증 발생률을 낮추기 위한 연구가 진행 중이다.",
-      "expected": "手術 後 합병증 발생률을 낮추기 위한 研究가 進行 중이다.",
+      "input": "수술 후 합병증 発生率을 낮추기 위한 연구가 진행 중이다.",
+      "expected": "手術 後 합병증 発生率을 낮추기 위한 研究가 進行 중이다.",
       "translation": "手術後の合併症発生率を下げるための研究が進行中である。"
     },
     {

@@ -911,6 +911,11 @@
         const prev=Object.keys(rule.after).find(k=>base.endsWith(k)&&base.length>k.length);   // 국가정보+원, never bare 정보원
         if(prev) out=rule.after[prev];
       }
+      // v5.2: a base-dependent reading that also applies to a bare base (증가세 = 増加勢).
+      if(rule.afterAny){
+        const k=Object.keys(rule.afterAny).find(x=>base.endsWith(x));
+        if(k) out=rule.afterAny[k];
+      }
       if(!out) continue;
       // Competing split: the last base syllable + the head is a word and the rest of the base is a word too
       // (사업자+금 vs 사업+자금): ambiguous, keep Hangul.
