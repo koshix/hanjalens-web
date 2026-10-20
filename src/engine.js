@@ -1609,6 +1609,59 @@
     return text.replace(re,(...args)=>keepWhitespace(args[0],expandReplacement(rep,args)));
   }
 
+  // v5.3: neighbour-word cues for homographs whose readings compete (data/v53-context-cues.tsv, learned offline from
+  // Korean–Japanese parallel text). A target eojeol (surface alone or surface + a listed tail) gets a reading only when
+  // the stem of the previous or next Hangul run is a cue and every cue that fires points to the same reading.
+  const CONTEXT_CUES=DATA.contextCues||{};
+  const CONTEXT_CUE_TAILS=[...(DATA.contextCueTails||[])].sort((a,b)=>b.length-a.length);
+  // Derivational tails (적, 적인, 적으로, 상) form other words (否定的), handled by the existing layers: not cue targets.
+  const CONTEXT_CUE_TAILSET=new Set(CONTEXT_CUE_TAILS.filter(t=>!/^(?:적|적인|적으로|상)$/u.test(t)));
+  const CONTEXT_CUE_MODIFIER_TAILS=new Set(['','의','한','할','하는','하던','했던','된','될','되는','되던','됐던']);
+  const CONTEXT_CUE_LENS=[...new Set(Object.keys(CONTEXT_CUES).map(s=>s.length))].sort((a,b)=>b-a);
+  // DATA.contextCues: {surface: {reading: 'p혈액 n결과 N받아 …'}}; p/n = previous/next noun cue, P/N = predicate cue.
+  const CONTEXT_CUE_INDEX=Object.fromEntries(Object.entries(CONTEXT_CUES).map(([s,byReading])=>{
+    const p=new Map(),n=new Map();
+    for(const [reading,list] of Object.entries(byReading)) for(const t of list.split(' ')){
+      const side=t[0].toLowerCase(), kind=t[0]===t[0].toLowerCase()?'noun':'pred', cue=t.slice(1);
+      const m=side==='p'?p:n; if(!m.has(cue)) m.set(cue,[]); m.get(cue).push([reading,kind]);
+    }
+    return [s,{p,n}];
+  }));
+  // Stems as in the offline counts, except that derivational tails (문화적 is not 문화) are kept.
+  function cueStem(w){
+    for(const t of CONTEXT_CUE_TAILS) if(CONTEXT_CUE_TAILSET.has(t)&&w.length>t.length+1&&w.endsWith(t)) return w.slice(0,-t.length);
+    return w;
+  }
+  function applyContextCues(text){
+    if(!CONTEXT_CUE_LENS.length) return text;
+    let out='', last=0;
+    // Hangul runs within one sentence (the parallel counts used one sentence per line).
+    for(const seg of text.matchAll(/[^.!?。！？\n]+[.!?。！？\n]*/gu)){
+      const base=seg.index, s=seg[0];
+      const runs=[...s.matchAll(/[가-힣]+/gu)];
+      for(let i=0;i<runs.length;i++){
+        const w=runs[i][0];
+        let head=null;
+        for(const L of CONTEXT_CUE_LENS){
+          if(L>w.length) continue;
+          const h=w.slice(0,L);
+          if(CONTEXT_CUE_INDEX[h]&&(w.length===L||CONTEXT_CUE_TAILSET.has(w.slice(L)))){ head=h; break; }
+        }
+        if(!head) continue;
+        const idx=CONTEXT_CUE_INDEX[head], votes=new Set(), tail=w.slice(head.length);
+        if(i>0){ const r=idx.p.get(cueStem(runs[i-1][0])); if(r) for(const [x] of r) votes.add(x); }
+        // A noun after a target with a case particle (독자가 문화적 …) starts another phrase: only predicate cues count there.
+        // Bare targets, the genitive and adnominal endings (정당한 이유, 확정된 …) modify the next noun.
+        if(i+1<runs.length){ const r=idx.n.get(cueStem(runs[i+1][0])); if(r) for(const [x,kind] of r) if(kind==='pred'||CONTEXT_CUE_MODIFIER_TAILS.has(tail)) votes.add(x); }
+        if(votes.size!==1) continue;
+        const reading=[...votes][0], at=base+runs[i].index;
+        out+=text.slice(last,at)+reading; last=at+head.length;
+        traceEvent('context-cue',{surface:head,reading});
+      }
+    }
+    return out+text.slice(last);
+  }
+
   function hanjaize(text){
     let prepared=normalize(text);
     const vetoInput=prepared;
@@ -1623,6 +1676,7 @@
       if(next!==prepared) traceEvent('context',{index:i,pattern:String(re)});
       prepared=next;
     }
+    prepared=applyContextCues(prepared);
     const parts=prepared.split(/(\s+)/);
     const words=parts.map((x,i)=>[x,i]).filter(([x])=>x&&!/^\s+$/u.test(x));
     const bare=w=>w.replace(/[^가-힣]/gu,'');

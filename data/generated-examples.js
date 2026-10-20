@@ -1,6 +1,6 @@
 // GENERATED FILE. Edit data/examples.tsv and run: node scripts/build-examples.mjs
 (function(root,factory){const d=factory();if(typeof module!=="undefined"&&module.exports)module.exports=d;root.HanjaLensExamples=d;})(typeof globalThis!=="undefined"?globalThis:this,function(){return {
-  "version": "5.2",
+  "version": "5.3",
   "examples": [
     {
       "id": "ex001",
@@ -706,7 +706,7 @@
       "id": "ex101",
       "category": "realtext-general-v2",
       "input": "사회 전반의 의식 변화가 이러한 흐름을 뒷받침하고 있다.",
-      "expected": "社会 全般의 의식 変化가 이러한 흐름을 뒷받침하고 있다.",
+      "expected": "社会 全般의 意識 変化가 이러한 흐름을 뒷받침하고 있다.",
       "translation": "社会全般の意識変化がこのような流れを支えている。"
     },
     {
@@ -1560,7 +1560,7 @@
       "id": "ex223",
       "category": "realtext-domain-v2.2",
       "input": "개인정보 유출 사고로 보안 강화의 필요성이 대두되었다.",
-      "expected": "個人情報 流出 사고로 보안 強化의 必要性이 대두되었다.",
+      "expected": "個人情報 流出 事故로 보안 強化의 必要性이 대두되었다.",
       "translation": "個人情報流出事故により、セキュリティ強化の必要性が浮上した。"
     },
     {
@@ -1903,7 +1903,7 @@
       "id": "ex272",
       "category": "science-life-v2.3.1",
       "input": "유전 정보는 세포의 성장과 기능을 조절하는 중요한 역할을 한다.",
-      "expected": "유전 情報는 細胞의 成長과 機能을 調節하는 重要한 役割을 한다.",
+      "expected": "遺伝 情報는 細胞의 成長과 機能을 調節하는 重要한 役割을 한다.",
       "translation": "遺伝情報は、細胞の成長と機能を調節する重要な役割を担う。"
     },
     {
