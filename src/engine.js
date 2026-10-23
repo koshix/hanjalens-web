@@ -1618,7 +1618,8 @@
   const CONTEXT_CUE_TAILSET=new Set(CONTEXT_CUE_TAILS.filter(t=>!/^(?:적|적인|적으로|상)$/u.test(t)));
   const CONTEXT_CUE_MODIFIER_TAILS=new Set(['','의','한','할','하는','하던','했던','된','될','되는','되던','됐던']);
   const CONTEXT_CUE_LENS=[...new Set(Object.keys(CONTEXT_CUES).map(s=>s.length))].sort((a,b)=>b-a);
-  // DATA.contextCues: {surface: {reading: 'p혈액 n결과 N받아 …'}}; p/n = previous/next noun cue, P/N = predicate cue.
+  // DATA.contextCues: {surface: {reading: 'p혈액 n결과 N받아 …'}}; p/n = previous/next noun cue, P/N = predicate cue;
+  // v5.5 switch targets also carry '!default' blocking cues (data/v55-switch-cues.tsv).
   const CONTEXT_CUE_INDEX=Object.fromEntries(Object.entries(CONTEXT_CUES).map(([s,byReading])=>{
     const p=new Map(),n=new Map();
     for(const [reading,list] of Object.entries(byReading)) for(const t of list.split(' ')){
@@ -1654,6 +1655,9 @@
         // Bare targets, the genitive and adnominal endings (정당한 이유, 확정된 …) modify the next noun.
         if(i+1<runs.length){ const r=idx.n.get(cueStem(runs[i+1][0])); if(r) for(const [x,kind] of r) if(kind==='pred'||CONTEXT_CUE_MODIFIER_TAILS.has(tail)) votes.add(x); }
         if(votes.size!==1) continue;
+        // v5.5: '!reading' is a cue for the default reading of a switch target (data/v55-switch-cues.tsv, kind block):
+        // the word is left to the normal layers, which show that default.
+        if([...votes][0].startsWith('!')) continue;
         const reading=[...votes][0], at=base+runs[i].index;
         out+=text.slice(last,at)+reading; last=at+head.length;
         traceEvent('context-cue',{surface:head,reading});

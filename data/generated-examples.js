@@ -1,6 +1,6 @@
 // GENERATED FILE. Edit data/examples.tsv and run: node scripts/build-examples.mjs
 (function(root,factory){const d=factory();if(typeof module!=="undefined"&&module.exports)module.exports=d;root.HanjaLensExamples=d;})(typeof globalThis!=="undefined"?globalThis:this,function(){return {
-  "version": "5.4",
+  "version": "5.5",
   "examples": [
     {
       "id": "ex001",
