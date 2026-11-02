@@ -125,6 +125,9 @@
   // ignores the dominant layer (일주일 is not 一周+일).
   // v4.9 M1: head -> {reading} or {after:{last part of base: reading}} (data/v49-compound-heads.tsv via generated data).
   const COMPOUND_HEADS=Object.entries(DATA.compoundHeads||{});
+  // v5.6: part -> {first|later: reading} for full compositions (data/v56-compound-parts.tsv): 피해+조사 → 被害調査 although 조사
+  // alone is a reviewed homograph that never serves as a part.
+  const COMPOUND_PARTS=DATA.compoundParts||{};
   const DOMINANT_NO_COMPONENT=new Set(DATA.dominantNoComponent||[]);
   const DOMINANT_NO_COMPONENT_BEFORE=DATA.dominantNoComponentBefore||{};
   const getFullComponentEntry=surface=>{
@@ -782,7 +785,12 @@
         // The whole surface is not a "component"; exact lookup already ran.
         if(i===0 && j===n) continue;
 
-        const c=component(part);
+        let c=component(part);
+        const fixed=COMPOUND_PARTS[part]&&COMPOUND_PARTS[part][i===0?'first':'later'];
+        // Only where the part is otherwise unusable (a reviewed homograph, a protected word …); it then counts as a
+        // dominant-reading part, so the dominant guards apply (only reliable parts, no part that cuts a longer known word:
+        // 노동자+적 is not 労働+自適). Compositions that work today are not changed.
+        if(fixed&&!c) c={surface:part,output:fixed,type:'runtime',source:'dominant'};
         if(!c) continue;
 
         for(const rest of rec(j)){

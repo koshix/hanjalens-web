@@ -1,5 +1,5 @@
 # Hanja Lens (public site)
 
-Static build of Hanja Lens v5.5 from release tag `v5.5` (commit `15fc0130ff133e312b11cfc3a4dc4b30149e1531`).
+Static build of Hanja Lens v5.6 from release tag `v5.6` (commit `a9784b4b5e19e832e1d1a65fcff427fa13870dc7`).
 Open `index.html` or the GitHub Pages URL. Sources and licenses: `credits.html`, `LICENSES/`.
 Built by `scripts/build-site.sh` in the development repository; do not edit by hand.
