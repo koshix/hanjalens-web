@@ -1629,12 +1629,13 @@
   // DATA.contextCues: {surface: {reading: 'p혈액 n결과 N받아 …'}}; p/n = previous/next noun cue, P/N = predicate cue;
   // v5.5 switch targets also carry '!default' blocking cues (data/v55-switch-cues.tsv).
   const CONTEXT_CUE_INDEX=Object.fromEntries(Object.entries(CONTEXT_CUES).map(([s,byReading])=>{
-    const p=new Map(),n=new Map();
+    const p=new Map(),n=new Map(),e=new Map();
     for(const [reading,list] of Object.entries(byReading)) for(const t of list.split(' ')){
       const side=t[0].toLowerCase(), kind=t[0]===t[0].toLowerCase()?'noun':'pred', cue=t.slice(1);
-      const m=side==='p'?p:n; if(!m.has(cue)) m.set(cue,[]); m.get(cue).push([reading,kind]);
+      // v5.7: side 't' = the target's own ending (data/v57-ending-cues.tsv: 중대한 → 重大, 정의된 → 定義).
+      const m=side==='p'?p:side==='t'?e:n; if(!m.has(cue)) m.set(cue,[]); m.get(cue).push([reading,kind]);
     }
-    return [s,{p,n}];
+    return [s,{p,n,e}];
   }));
   // Stems as in the offline counts, except that derivational tails (문화적 is not 문화) are kept.
   function cueStem(w){
@@ -1662,6 +1663,7 @@
         // A noun after a target with a case particle (독자가 문화적 …) starts another phrase: only predicate cues count there.
         // Bare targets, the genitive and adnominal endings (정당한 이유, 확정된 …) modify the next noun.
         if(i+1<runs.length){ const r=idx.n.get(cueStem(runs[i+1][0])); if(r) for(const [x,kind] of r) if(kind==='pred'||CONTEXT_CUE_MODIFIER_TAILS.has(tail)) votes.add(x); }
+        { const r=idx.e.get(tail); if(r) for(const [x] of r) votes.add(x); }
         if(votes.size!==1) continue;
         // v5.5: '!reading' is a cue for the default reading of a switch target (data/v55-switch-cues.tsv, kind block):
         // the word is left to the normal layers, which show that default.
